@@ -1,0 +1,23 @@
+{
+  "name": "eduadpat",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "db:generate": "pnpm --filter @eduadpat/database generate",
+    "db:push": "pnpm --filter @eduadpat/database push",
+    "db:migrate": "pnpm --filter @eduadpat/database migrate",
+    "db:seed": "pnpm --filter @eduadpat/database seed",
+    "db:studio": "pnpm --filter @eduadpat/database studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

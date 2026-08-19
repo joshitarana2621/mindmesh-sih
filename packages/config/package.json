@@ -1,0 +1,13 @@
+{
+  "name": "@eduadpat/config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./tsconfig": "./tsconfig.json",
+    "./eslint": "./eslint.config.mjs",
+    "./tailwind": "./tailwind.config.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

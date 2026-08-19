@@ -1,0 +1,713 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== Identity & Tenancy ====================
+
+model Institution {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  classrooms       Classroom[]
+  courses          Course[]
+  devices          Device[]
+  syncEvents       SyncEvent[]
+  auditLogs        AuditLog[]
+  interventionEvents InterventionEvent[]
+  quizzes          Quiz[]
+}
+
+model User {
+  id             String    @id @default(uuid())
+  institutionId  String
+  email          String?   @unique
+  name           String
+  role           UserRole
+  passwordHash   String?
+  avatarUrl      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  institution        Institution          @relation(fields: [institutionId], references: [id])
+  studentProfile     StudentProfile?
+  teacherProfile     TeacherProfile?
+  classroomMembers   ClassroomMember[]
+  devices            Device[]
+  deviceSessions     DeviceSession[]
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  assignedInterventions InterventionEvent[] @relation("AssignedTeacher")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  INSTITUTION_ADMIN
+  PLATFORM_SUPPORT
+}
+
+model StudentProfile {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  institutionId String
+  rollNumber    String?
+  gradeBand     String?
+  language      String  @default("en")
+
+  user            User               @relation(fields: [userId], references: [id])
+  attempts        QuizAttempt[]
+  masteryRecords  StudentMastery[]
+  interventionEvents InterventionEvent[]
+  riskRecords     LearningRisk[]
+  misconceptionRecords Misconception[]
+  peerPodMembers  PeerPodMember[]
+}
+
+model TeacherProfile {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  institutionId String
+  subject       String?
+  department    String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Classroom {
+  id            String   @id @default(uuid())
+  institutionId String
+  name          String
+  gradeBand     String?
+  subject       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  institution      Institution           @relation(fields: [institutionId], references: [id])
+  members          ClassroomMember[]
+  quizzes          Quiz[]
+  interventionEvents InterventionEvent[]
+  peerPods         PeerPod[]
+  rotationPlans    RotationPlan[]
+}
+
+model ClassroomMember {
+  id          String  @id @default(uuid())
+  classroomId String
+  userId      String
+  role        ClassroomRole
+  joinedAt    DateTime @default(now())
+
+  classroom Classroom @relation(fields: [classroomId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([classroomId, userId])
+}
+
+enum ClassroomRole {
+  STUDENT
+  TEACHER
+  ASSISTANT
+}
+
+// ==================== Curriculum ====================
+
+model Course {
+  id            String   @id @default(uuid())
+  institutionId String
+  name          String
+  code          String
+  description   String?
+  createdAt     DateTime @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id])
+  subjects    Subject[]
+}
+
+model Subject {
+  id        String  @id @default(uuid())
+  courseId   String
+  name      String
+  code      String
+  language  String  @default("en")
+  version   Int     @default(1)
+
+  course   Course     @relation(fields: [courseId], references: [id])
+  chapters Chapter[]
+}
+
+model Chapter {
+  id        String  @id @default(uuid())
+  subjectId String
+  name      String
+  order     Int
+
+  subject  Subject   @relation(fields: [subjectId], references: [id])
+  topics   Topic[]
+}
+
+model Topic {
+  id        String  @id @default(uuid())
+  chapterId String
+  name      String
+  order     Int
+
+  chapter             Chapter                @relation(fields: [chapterId], references: [id])
+  knowledgeComponents KnowledgeComponent[]
+}
+
+model KnowledgeComponent {
+  id           String   @id @default(uuid())
+  topicId      String
+  code         String
+  name         String
+  description  String?
+  gradeBand    String?
+  language     String   @default("en")
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+
+  topic              Topic                      @relation(fields: [topicId], references: [id])
+  prerequisites      KnowledgeComponentPrerequisite[] @relation("KCPrereq")
+  dependents         KnowledgeComponentPrerequisite[] @relation("KCDependent")
+  questionMappings   QuestionKnowledgeComponent[]
+  masteryRecords     StudentMastery[]
+  riskRecords        LearningRisk[]
+  misconceptionRecords Misconception[]
+  interventionEvents InterventionEvent[]
+}
+
+model KnowledgeComponentPrerequisite {
+  id                String @id @default(uuid())
+  kcId              String
+  prerequisiteId    String
+  weight            Float  @default(1.0)
+
+  kc          KnowledgeComponent @relation("KCDependent", fields: [kcId], references: [id])
+  prerequisite KnowledgeComponent @relation("KCPrereq", fields: [prerequisiteId], references: [id])
+
+  @@unique([kcId, prerequisiteId])
+}
+
+// ==================== Assessment ====================
+
+model Quiz {
+  id            String   @id @default(uuid())
+  institutionId String
+  classroomId   String?
+  title         String
+  description   String?
+  language      String   @default("en")
+  durationMinutes Int    @default(2)
+  createdBy     String
+  status        QuizStatus @default(DRAFT)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  institution Institution  @relation(fields: [institutionId], references: [id])
+  classroom   Classroom?   @relation(fields: [classroomId], references: [id])
+  versions    QuizVersion[]
+  attempts    QuizAttempt[]
+}
+
+enum QuizStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model QuizVersion {
+  id                    String   @id @default(uuid())
+  quizId                String
+  version               Int
+  packageId             String   @unique
+  integrityHash         String
+  scoringConfigVersion  String   @default("mastery-v1")
+  expiresAt             DateTime?
+  createdAt             DateTime @default(now())
+
+  quiz     Quiz          @relation(fields: [quizId], references: [id])
+  questions QuizQuestion[]
+  attempts QuizAttempt[]
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  institutionId String
+  text          String
+  type          QuestionType
+  difficulty    Float    @default(0.5)
+  language      String   @default("en")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  versions       QuestionVersion[]
+  attempts       QuestionAttempt[]
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+model QuestionVersion {
+  id          String   @id @default(uuid())
+  questionId  String
+  version     Int
+  text        String
+  options     QuestionOption[]
+  createdAt   DateTime @default(now())
+
+  question      Question        @relation(fields: [questionId], references: [id])
+  kcMappings    QuestionKnowledgeComponent[]
+  quizQuestions QuizQuestion[]
+  attempts      QuestionAttempt[]
+}
+
+model QuestionOption {
+  id                String @id @default(uuid())
+  questionVersionId String
+  text              String
+  isCorrect         Boolean
+  order             Int
+  distractorType    String?
+
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id])
+}
+
+model QuestionKnowledgeComponent {
+  id                  String  @id @default(uuid())
+  questionVersionId   String
+  kcId                String
+  weight              Float   @default(1.0)
+
+  questionVersion QuestionVersion    @relation(fields: [questionVersionId], references: [id])
+  kc              KnowledgeComponent @relation(fields: [kcId], references: [id])
+
+  @@unique([questionVersionId, kcId])
+}
+
+model QuizQuestion {
+  id                String @id @default(uuid())
+  quizVersionId     String
+  questionVersionId String
+  order             Int
+  points            Float  @default(1.0)
+
+  quizVersion     QuizVersion     @relation(fields: [quizVersionId], references: [id])
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id])
+
+  @@unique([quizVersionId, questionVersionId])
+}
+
+// ==================== Learning Evidence ====================
+
+model QuizAttempt {
+  id                 String        @id @default(uuid())
+  studentId          String
+  quizId             String
+  quizVersionId      String
+  deviceId           String?
+  profileNamespace   String?
+  status             AttemptStatus @default(ASSIGNED)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  syncedAt           DateTime?
+  localScore         Float?
+  serverScore        Float?
+  networkState       String?
+
+  student      StudentProfile    @relation(fields: [studentId], references: [id])
+  quiz         Quiz              @relation(fields: [quizId], references: [id])
+  quizVersion  QuizVersion       @relation(fields: [quizVersionId], references: [id])
+  questions    QuestionAttempt[]
+}
+
+enum AttemptStatus {
+  ASSIGNED
+  DOWNLOADED
+  AVAILABLE_OFFLINE
+  STARTED
+  IN_PROGRESS
+  COMPLETED
+  LOCALLY_SCORED
+  QUEUED
+  SYNCED
+  NEEDS_ATTENTION
+}
+
+model QuestionAttempt {
+  id                String   @id @default(uuid())
+  attemptId         String
+  questionId        String
+  questionVersionId String
+  answer            String?
+  isCorrect         Boolean?
+  latencyMs         Int?
+  attemptNumber     Int      @default(1)
+  answerChangeCount Int      @default(0)
+  startedAt         DateTime?
+  submittedAt       DateTime?
+
+  attempt      QuizAttempt   @relation(fields: [attemptId], references: [id])
+  question     Question      @relation(fields: [questionId], references: [id])
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id])
+}
+
+model TelemetryEvent {
+  id                String   @id @default(uuid())
+  eventId           String   @unique
+  studentId         String?
+  profileNamespace  String
+  deviceId          String
+  sequence          Int
+  type              String
+  payload           Json
+  schemaVersion     Int      @default(1)
+  occurredAt        DateTime
+  syncedAt          DateTime?
+  createdAt         DateTime @default(now())
+}
+
+model StudentMastery {
+  id             String   @id @default(uuid())
+  studentId      String
+  kcId           String
+  institutionId  String
+  accuracy       Float    @default(0)
+  latencyScore   Float    @default(0)
+  kcPerformance  Float    @default(0)
+  mastery        Float    @default(0)
+  attemptCount   Int      @default(0)
+  version        String   @default("mastery-v1")
+  lastAttemptAt  DateTime?
+  updatedAt      DateTime @updatedAt
+
+  student StudentProfile      @relation(fields: [studentId], references: [id])
+  kc      KnowledgeComponent  @relation(fields: [kcId], references: [id])
+
+  @@unique([studentId, kcId])
+}
+
+model Misconception {
+  id             String   @id @default(uuid())
+  studentId      String
+  kcId           String
+  category       MisconceptionCategory
+  confidence     Float
+  evidence       Json
+  detectedAt     DateTime @default(now())
+
+  student StudentProfile      @relation(fields: [studentId], references: [id])
+  kc      KnowledgeComponent  @relation(fields: [kcId], references: [id])
+}
+
+enum MisconceptionCategory {
+  CALCULATION_SLIP
+  READING_ERROR
+  CARELESS_ERROR
+  SYNTAX_ERROR
+  LOGICAL_ERROR
+  CONCEPTUAL_ERROR
+  PREREQUISITE_GAP
+  UNKNOWN
+}
+
+model LearningRisk {
+  id             String   @id @default(uuid())
+  studentId      String
+  kcId           String
+  institutionId  String
+  priority       RiskPriority
+  score          Float
+  signals        Json
+  ruleVersion    String
+  explanation    String
+  computedAt     DateTime @default(now())
+
+  student StudentProfile      @relation(fields: [studentId], references: [id])
+  kc      KnowledgeComponent  @relation(fields: [kcId], references: [id])
+}
+
+enum RiskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ==================== Intervention & Peer Learning ====================
+
+model InterventionEvent {
+  id                      String   @id @default(uuid())
+  institutionId           String
+  classroomId             String
+  studentId               String
+  teacherId               String?
+  priority                RiskPriority
+  triggerFamily           String
+  evidence                Json
+  knowledgeComponentId    String?
+  recommendedActionText   String?
+  status                  InterventionStatus @default(OPEN)
+  dedupeKey               String
+  eventCount              Int      @default(1)
+  lastEvidenceAt          DateTime
+  createdAt               DateTime @default(now())
+  acknowledgedAt          DateTime?
+  snoozedUntil            DateTime?
+  resolvedAt              DateTime?
+  outcome                 String?
+
+  institution Institution       @relation(fields: [institutionId], references: [id])
+  classroom   Classroom         @relation(fields: [classroomId], references: [id])
+  student     StudentProfile    @relation(fields: [studentId], references: [id])
+  teacher     User?             @relation("AssignedTeacher", fields: [teacherId], references: [id])
+  kc          KnowledgeComponent? @relation(fields: [knowledgeComponentId], references: [id])
+  actions     InterventionAction[]
+}
+
+enum InterventionStatus {
+  OPEN
+  ACKNOWLEDGED
+  SNOOZED
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
+}
+
+model InterventionAction {
+  id                String   @id @default(uuid())
+  interventionId    String
+  actorId           String
+  actionType        String
+  reason            String?
+  recheckAttemptId  String?
+  createdAt         DateTime @default(now())
+
+  intervention InterventionEvent @relation(fields: [interventionId], references: [id])
+}
+
+model PeerPod {
+  id            String   @id @default(uuid())
+  classroomId   String
+  targetKC      String?
+  status        PeerPodStatus @default(DRAFT)
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  classroom Classroom        @relation(fields: [classroomId], references: [id])
+  members   PeerPodMember[]
+  activities PeerActivity[]
+}
+
+enum PeerPodStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+}
+
+model PeerPodMember {
+  id          String @id @default(uuid())
+  podId       String
+  studentId   String
+  role        PeerRole
+
+  pod     PeerPod        @relation(fields: [podId], references: [id])
+  student StudentProfile @relation(fields: [studentId], references: [id])
+
+  @@unique([podId, studentId])
+}
+
+enum PeerRole {
+  MENTOR
+  MENTEE
+}
+
+model PeerActivity {
+  id            String   @id @default(uuid())
+  podId         String
+  objective     String
+  kcCode        String?
+  durationMinutes Int?
+  status        String   @default("PLANNED")
+  recheckAttemptId String?
+  createdAt     DateTime @default(now())
+
+  pod PeerPod @relation(fields: [podId], references: [id])
+}
+
+model Remediation {
+  id                String   @id @default(uuid())
+  kcCode            String
+  misconception     String?
+  language          String   @default("en")
+  contentVersion    String
+  promptVersion     String
+  content           Json
+  provider          String?
+  modelVersion      String?
+  schemaVersion     Int      @default(1)
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime?
+  usageCount        Int      @default(0)
+}
+
+// ==================== Devices & Operations ====================
+
+model Device {
+  id            String   @id @default(uuid())
+  institutionId String?
+  installationId String  @unique
+  platform      String?
+  browser       String?
+  lastSeenAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  institution Institution?    @relation(fields: [institutionId], references: [id])
+  sessions    DeviceSession[]
+  syncEvents  SyncEvent[]
+  user        User?           @relation(fields: [userId], references: [id])
+  userId      String?
+}
+
+model DeviceSession {
+  id               String   @id @default(uuid())
+  deviceId         String
+  userId           String
+  profileNamespace String
+  isActive         Boolean  @default(true)
+  startedAt        DateTime @default(now())
+  endedAt          DateTime?
+
+  device      Device        @relation(fields: [deviceId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  syncEvents  SyncEvent[]
+}
+
+model SyncEvent {
+  id               String   @id @default(uuid())
+  institutionId    String
+  eventId          String
+  deviceId         String
+  deviceSessionId  String?
+  profileNamespace String
+  sequence         Int
+  type             String
+  payload          Json
+  payloadHash      String
+  schemaVersion    Int      @default(1)
+  idempotencyKey   String?
+  status           SyncStatus @default(PENDING)
+  serverOutcome    Json?
+  receiptId        String?
+  processedAt      DateTime?
+  createdAt        DateTime @default(now())
+
+  institution Institution     @relation(fields: [institutionId], references: [id])
+  device      Device          @relation(fields: [deviceId], references: [id])
+  session     DeviceSession?  @relation(fields: [deviceSessionId], references: [id])
+
+  @@unique([institutionId, eventId])
+}
+
+enum SyncStatus {
+  PENDING
+  ACCEPTED
+  DUPLICATE
+  REJECTED
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String
+  title       String
+  body        String?
+  data        Json?
+  read        Boolean  @default(false)
+  dedupeKey   String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, dedupeKey])
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  institutionId String
+  actorId       String?
+  action        String
+  resourceType  String
+  resourceId    String?
+  details       Json?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id])
+  actor       User?       @relation(fields: [actorId], references: [id])
+}
+
+model OutboxJob {
+  id            String   @id @default(uuid())
+  type          String
+  payload       Json
+  status        OutboxJobStatus @default(PENDING)
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  lastError     String?
+  runAfter      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  processedAt   DateTime?
+
+  @@index([status, runAfter])
+}
+
+enum OutboxJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ==================== Rotation ====================
+
+model RotationPlan {
+  id            String   @id @default(uuid())
+  classroomId   String
+  name          String
+  stationCount  Int      @default(3)
+  slotDurationMinutes Int @default(15)
+  totalSlots    Int      @default(3)
+  status        String   @default("DRAFT")
+  createdBy     String
+  startedAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  classroom   Classroom         @relation(fields: [classroomId], references: [id])
+  assignments RotationAssignment[]
+}
+
+model RotationAssignment {
+  id           String   @id @default(uuid())
+  planId       String
+  groupNumber  Int
+  slotIndex    Int
+  station      String
+  studentIds   Json
+
+  plan RotationPlan @relation(fields: [planId], references: [id])
+}
