@@ -150,7 +150,49 @@ export default function AdminPage() {
             <div className="pl-24 pt-2 flex flex-wrap gap-2">{[["KC-001", "Array declaration"], ["KC-002", "Array indexing"], ["KC-003", "Array traversal → needs KC-002"], ["KC-004", "Array insertion → needs KC-001, KC-002"]].map(([code, desc]) => (<span key={code} className="text-xs bg-slate-100 border border-slate-200 rounded-full px-3 py-1.5 font-medium text-slate-600"><span className="font-bold text-violet-600">{code}</span> {desc}</span>))}</div>
           </div>
         </div>
-      </main>
+            </main>
+      
+      {managingClassroom && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-lg shadow-2xl animate-fade-up overflow-hidden">
+            <div className="bg-slate-50 border-b border-slate-100 p-5 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-lg">Manage Classroom</h3>
+                <p className="text-xs text-slate-400 font-semibold mt-0.5">{managingClassroom.name} · {managingClassroom.subject || "No Subject"}</p>
+              </div>
+              <button 
+                onClick={() => setManagingClassroom(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <Icon name="logout" className="w-5 h-5 rotate-180" />
+              </button>
+            </div>
+            <div className="p-5 max-h-[60vh] overflow-y-auto">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                <Icon name="users" className="w-4 h-4 text-violet-600" /> Student Roster ({students.length || 3})
+              </h4>
+              <div className="space-y-2.5">
+                {(students.length ? students : [
+                  { id: "s1", name: "Aarav Patel", email: "student1@demoschool.edu", rollNumber: "R001", gradeBand: "8", language: "en" },
+                  { id: "s2", name: "Diya Sharma", email: "student2@demoschool.edu", rollNumber: "R002", gradeBand: "8", language: "en" },
+                  { id: "s3", name: "Rohan Gupta", email: "student3@demoschool.edu", rollNumber: "R003", gradeBand: "8", language: "en" },
+                ]).map((st) => (
+                  <div key={st.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{st.name}</p>
+                      <p className="text-xs text-slate-400">{st.email} · Roll: {st.rollNumber || "N/A"}</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-200/50 rounded px-1.5 py-0.5 uppercase">{st.language || "en"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-slate-50 border-t border-slate-100 p-4 flex justify-end gap-2">
+              <Button onClick={() => setManagingClassroom(null)} variant="outline" size="sm">Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
