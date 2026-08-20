@@ -194,7 +194,7 @@ export default function TeacherDashboard() {
                       size="sm" 
                       onClick={() => triggerAI(i.id)} 
                       disabled={loadingAI[i.id] || expandedAI[i.id]}
-                      className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 text-white font-bold gap-1.5 shadow-md shadow-violet-500/25"
+                      className="bg-gradient-to-r from-sky-700 to-blue-800 hover:opacity-90 text-white font-bold gap-1.5 shadow-md shadow-blue-800/25"
                     >
                       <Icon name="sparkles" className="w-3.5 h-3.5" />
                       {loadingAI[i.id] ? "Analyzing..." : expandedAI[i.id] ? "Copilot Analyzed" : "Reveal AI Action Plan"}
@@ -203,7 +203,7 @@ export default function TeacherDashboard() {
                 </div>
 
                 {loadingAI[i.id] && (
-                  <div className="mt-3 bg-violet-50/50 border border-dashed border-violet-200 rounded-xl p-4 flex items-center justify-center gap-2 text-violet-700 font-semibold text-xs animate-pulse">
+                  <div className="mt-3 bg-sky-50/30 border border-dashed border-sky-200 rounded-xl p-4 flex items-center justify-center gap-2 text-sky-800 font-semibold text-xs animate-pulse">
                     <Icon name="refresh" className="w-4 h-4 animate-spin" /> Analyzing learning gap with AI Copilot...
                   </div>
                 )}
@@ -211,9 +211,9 @@ export default function TeacherDashboard() {
                 {expandedAI[i.id] && AI_RECOMMENDATIONS[i.studentName] && (() => {
                   const rec = AI_RECOMMENDATIONS[i.studentName];
                   return (
-                    <div className="mt-3 bg-gradient-to-br from-violet-50/70 to-indigo-50/70 border border-violet-100/80 rounded-xl p-4 animate-fade-up">
-                      <div className="flex items-center gap-2 text-violet-700 font-extrabold text-xs uppercase tracking-wide">
-                        <Icon name="sparkles" className="w-4 h-4 text-violet-600 animate-pulse" /> AI Copilot Learning Recommendation
+                    <div className="mt-3 bg-gradient-to-br from-sky-50/40 to-blue-50/30 border border-sky-100 rounded-xl p-4 animate-fade-up">
+                      <div className="flex items-center gap-2 text-sky-800 font-extrabold text-xs uppercase tracking-wide">
+                        <Icon name="sparkles" className="w-4 h-4 text-sky-600 animate-pulse" /> AI Copilot Learning Recommendation
                       </div>
                       <div className="mt-2.5 text-sm text-slate-700">
                         <p className="font-semibold text-slate-800 text-xs">Detected Skill Gap:</p>
@@ -225,11 +225,11 @@ export default function TeacherDashboard() {
                           {rec.plan.map((p, idx) => <li key={idx}>{p}</li>)}
                         </ul>
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-xs border-t border-violet-100/50 pt-2.5">
+                      <div className="mt-3 flex items-center justify-between text-xs border-t border-sky-100/60 pt-2.5">
                         <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                          <Icon name="users" className="w-3.5 h-3.5 text-violet-500" /> Peer Study Buddy: <span className="text-violet-700 font-bold">{rec.buddy}</span>
+                          <Icon name="users" className="w-3.5 h-3.5 text-sky-600" /> Peer Study Buddy: <span className="text-violet-700 font-bold">{rec.buddy}</span>
                         </span>
-                        <span className="text-[10px] font-bold text-violet-500 bg-violet-100 rounded px-1.5 py-0.5">Scaffolded Mode</span>
+                        <span className="text-[10px] font-bold text-violet-500 bg-sky-100 rounded px-1.5 py-0.5">Scaffolded Mode</span>
                       </div>
                     </div>
                   );

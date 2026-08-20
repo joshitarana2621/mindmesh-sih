@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root{
-  --background:#f8fafc;
-  --foreground:#0f172a;
+  --background:#f6fafd;
+  --foreground:#0a1931;
   --card:#ffffff;
-  --primary:#7c3aed;
+  --primary:#1a3d63;
   --primary-foreground:#ffffff;
-  --secondary:#eef2ff;
-  --secondary-foreground:#4338ca;
-  --muted:#f1f5f9;
-  --muted-foreground:#64748b;
-  --accent:#0ea5e9;
+  --secondary:#b3cfe5;
+  --secondary-foreground:#0a1931;
+  --muted:#f0f5f9;
+  --muted-foreground:#4a7fa7;
+  --accent:#4a7fa7;
   --accent-foreground:#ffffff;
   --destructive:#e11d48;
   --destructive-foreground:#ffffff;
-  --border:#e2e8f0;
-  --input:#e2e8f0;
-  --ring:#8b5cf6;
+  --border:#dbeafe;
+  --input:#dbeafe;
+  --ring:#1a3d63;
   --radius:0.75rem;
   --green:#22c55e;
   --yellow:#eab308;
@@ -28,7 +28,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-foreground: var(--color-primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -43,9 +43,9 @@
 *{border-color:var(--border)}
 body{background-color:var(--background);color:var(--foreground);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 
-.bg-brand{background-image:linear-gradient(135deg,#7c3aed 0%,#6d28d9 40%,#0ea5e9 100%)}
-.bg-brand-soft{background-image:linear-gradient(135deg,rgba(124,58,237,.08) 0%,rgba(14,165,233,.08) 100%)}
-.text-brand{background-image:linear-gradient(135deg,#7c3aed,#0ea5e9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bg-brand{background-image:linear-gradient(135deg,#0a1931 0%,#1a3d63 40%,#4a7fa7 100%)}
+.bg-brand-soft{background-image:linear-gradient(135deg,rgba(26,61,99,.08) 0%,rgba(74,127,167,.08) 100%)}
+.text-brand{background-image:linear-gradient(135deg,#1a3d63,#4a7fa7);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 .card-hover{transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
 .card-hover:hover{transform:translateY(-2px);box-shadow:0 12px 28px -8px rgba(100,116,139,.25);border-color:#c7d2fe}
