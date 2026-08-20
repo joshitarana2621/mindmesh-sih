@@ -87,7 +87,7 @@ export default function TeacherDashboard() {
     s.on("intervention.resolved", (ev: any) => { setInterventions(prev => prev.map(i => i.id === ev.payload.interventionId ? { ...i, status: "RESOLVED", outcome: ev.payload.outcome } : i)); });
     s.connect();
     return () => { s.off("intervention.created"); s.off("intervention.acknowledged"); s.off("intervention.resolved"); };
-  }, [radar]);
+  }, []);
   const act = async (id: string, action: "acknowledge" | "resolve" | "dismiss") => {
     try {
       const body = action === "resolve" ? { outcome: "Intervention completed - recheck scheduled" } : action === "dismiss" ? { reason: "Not applicable - teacher judgement" } : { reason: "Teacher acknowledged" };
