@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,33 @@ import { StatCard } from "@/components/ui/stat-card";
 export default function AdminPage() {
   const auth = useAuthStore();
   const [classrooms, setClassrooms] = useState<any[]>([]);
+  const [name, setName] = useState("");
+  const [gradeBand, setGradeBand] = useState("");
+  const [subject, setSubject] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleCreateClassroom = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const newClass = await api<any>("/api/v1/classrooms", {
+        method: "POST",
+        body: { name, gradeBand: gradeBand || undefined, subject: subject || undefined },
+      });
+      setClassrooms(prev => [newClass, ...prev]);
+      setStats(prev => ({ ...prev, students: prev.students + 1 }));
+      setName("");
+      setGradeBand("");
+      setSubject("");
+    } catch (err) {
+      setError(err?.message || "Failed to create classroom");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   const [stats, setStats] = useState({ teachers: 2, students: 6, quizzes: 1, institutions: 1 });
   useEffect(() => { api<any[]>("/api/v1/classrooms").then(setClassrooms).catch(() => {}); }, []);
   return (
@@ -29,18 +56,70 @@ export default function AdminPage() {
           <StatCard icon="zap" label="Students" value={stats.students} accent="amber" />
           <StatCard icon="target" label="Quizzes" value={stats.quizzes} accent="emerald" />
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-fade-up">
-          <h2 className="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2"><Icon name="users" className="w-5 h-5 text-violet-600" /> Classrooms</h2>
-          <div className="space-y-3">
-            {(classrooms.length ? classrooms : [{ id: "demo", name: "Grade 8 - Section A", gradeBand: "8", subject: "Computer Science", _count: { members: 8 } }]).map((c: any) => (
-              <div key={c.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-4 card-hover">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-brand-soft text-violet-600 flex items-center justify-center"><Icon name="book" className="w-5 h-5" /></div>
-                  <div><p className="font-bold text-slate-800">{c.name}</p><p className="text-xs text-slate-400">{c.gradeBand || "Grade 8"} · {c.subject || "Computer Science"} · {c._count?.members || 8} members</p></div>
+        <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="md:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 animate-fade-up">
+            <h2 className="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2">
+              <Icon name="users" className="w-5 h-5 text-violet-600" /> Classrooms
+            </h2>
+            <div className="space-y-3">
+              {(classrooms.length ? classrooms : [{ id: "demo", name: "Grade 8 - Section A", gradeBand: "8", subject: "Computer Science", _count: { members: 8 } }]).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-4 card-hover">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-brand-soft text-violet-600 flex items-center justify-center"><Icon name="book" className="w-5 h-5" /></div>
+                    <div><p className="font-bold text-slate-800">{c.name}</p><p className="text-xs text-slate-400">{c.gradeBand || "Grade 8"} · {c.subject || "Computer Science"} · {c._count?.members || 8} members</p></div>
+                  </div>
+                  <div className="flex gap-2"><Badge variant="success">Active</Badge><Button size="sm" variant="outline">Manage</Button></div>
                 </div>
-                <div className="flex gap-2"><Badge variant="success">Active</Badge><Button size="sm" variant="outline">Manage</Button></div>
+              ))}
+            </div>
+          </div>
+          <div className="md:col-span-1 bg-white rounded-2xl border border-slate-200 p-6 animate-fade-up">
+            <h2 className="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2">
+              <Icon name="plus" className="w-5 h-5 text-brand" /> Create Classroom
+            </h2>
+            <form onSubmit={handleCreateClassroom} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Classroom Name</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Grade 9 - Section B"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                />
               </div>
-            ))}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Grade Band</label>
+                  <input
+                    type="text"
+                    value={gradeBand}
+                    onChange={(e) => setGradeBand(e.target.value)}
+                    placeholder="e.g. 9"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Subject</label>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Science"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+              {error && <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded-lg p-2.5 font-medium">{error}</p>}
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-brand hover:opacity-90 text-white font-bold rounded-xl py-2.5 shadow-md shadow-violet-500/25 transition-all active:scale-[.98]"
+              >
+                {submitting ? "Creating..." : "Create Classroom"}
+              </Button>
+            </form>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-fade-up">
