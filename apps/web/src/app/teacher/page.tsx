@@ -75,7 +75,7 @@ export default function TeacherDashboard() {
           <div className="flex items-center gap-2">
             <Link href="/teacher/peers" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-violet-300 hover:text-violet-600 transition-colors shadow-sm"><Icon name="users" className="w-4 h-4" /> Peer Pods</Link>
             <Link href="/teacher/rotations" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-violet-300 hover:text-violet-600 transition-colors shadow-sm"><Icon name="refresh" className="w-4 h-4" /> Rotations</Link>
-            <Button size="sm" variant="ghost" onClick={() => auth.logout()} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
+            <Button size="sm" variant="ghost" onClick={() => { auth.logout(); window.location.href = "/login"; }} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
           </div>
         </div>
       </header>

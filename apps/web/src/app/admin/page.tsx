@@ -19,7 +19,7 @@ export default function AdminPage() {
             <div className="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center shadow-md shadow-violet-500/30"><Icon name="sparkles" className="w-5 h-5" /></div>
             <div><h1 className="text-lg font-extrabold text-slate-900">Institution Admin</h1><p className="text-xs text-slate-400 font-medium">{auth.institutionId ? `Institution: ${auth.institutionId.slice(0, 8)}` : "Demo School"}</p></div>
           </div>
-          <Button size="sm" variant="ghost" onClick={() => auth.logout()} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
+          <Button size="sm" variant="ghost" onClick={() => { auth.logout(); window.location.href = "/login"; }} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
         </div>
       </header>
       <main className="max-w-6xl mx-auto p-4 space-y-6">

@@ -34,7 +34,7 @@ export default function StudentDashboard() {
               <Icon name={conn === "ONLINE" ? "wifi" : conn === "OFFLINE" ? "offline" : "refresh"} className="w-3.5 h-3.5" />
               {conn === "ONLINE" ? "Online" : conn === "OFFLINE" ? "Offline" : conn === "SYNCING" ? "Syncing…" : `${queue} to sync`}
             </span>
-            <Button size="sm" variant="ghost" onClick={() => auth.logout()} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
+            <Button size="sm" variant="ghost" onClick={() => { auth.logout(); window.location.href = "/login"; }} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
           </div>
         </div>
       </header>
