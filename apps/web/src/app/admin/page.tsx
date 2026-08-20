@@ -37,6 +37,24 @@ export default function AdminPage() {
     }
   };
   const [stats, setStats] = useState({ teachers: 2, students: 6, quizzes: 1, institutions: 1 });
+  const [managingClassroom, setManagingClassroom] = useState<any | null>(null);
+  const [students, setStudents] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!managingClassroom || managingClassroom.id === "demo") {
+      setStudents([]);
+      return;
+    }
+    const fetchStudents = async () => {
+      try {
+        const res = await api<any[]>(`/api/v1/classrooms/${managingClassroom.id}/students`);
+        setStudents(res || []);
+      } catch {
+        setStudents([]);
+      }
+    };
+    fetchStudents();
+  }, [managingClassroom]);
   useEffect(() => { api<any[]>("/api/v1/classrooms").then(setClassrooms).catch(() => {}); }, []);
   return (
     <div className="min-h-screen bg-slate-50">
@@ -68,7 +86,7 @@ export default function AdminPage() {
                     <div className="w-10 h-10 rounded-xl bg-brand-soft text-violet-600 flex items-center justify-center"><Icon name="book" className="w-5 h-5" /></div>
                     <div><p className="font-bold text-slate-800">{c.name}</p><p className="text-xs text-slate-400">{c.gradeBand || "Grade 8"} · {c.subject || "Computer Science"} · {c._count?.members || 8} members</p></div>
                   </div>
-                  <div className="flex gap-2"><Badge variant="success">Active</Badge><Button size="sm" variant="outline">Manage</Button></div>
+                  <div className="flex gap-2"><Badge variant="success">Active</Badge><Button size="sm" variant="outline" onClick={() => setManagingClassroom(c)}>Manage</Button></div>
                 </div>
               ))}
             </div>
