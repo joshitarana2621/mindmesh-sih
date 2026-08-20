@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
 import { useKioskStore } from "@/stores/kiosk-store";
@@ -19,6 +20,8 @@ export default function StudentDashboard() {
   const name = kiosk.currentProfile?.name || auth.name || "Student";
   useSync();
   const conn = useConnectivityStore(s => s.state);
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredTopics = TOPICS.filter(t => t.t.toLowerCase().includes(searchQuery.toLowerCase()) || t.code.toLowerCase().includes(searchQuery.toLowerCase()));
   const queue = useConnectivityStore(s => s.syncQueueCount);
   const next = TOPICS.reduce((a, b) => (a.m < b.m ? a : b));
   return (
@@ -58,12 +61,26 @@ export default function StudentDashboard() {
           </div>
         </div>
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-extrabold text-slate-900">Topic Mastery</h2>
-            <span className="text-xs font-semibold text-slate-400">KC · knowledge component</span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Topic Mastery</h2>
+              <p className="text-xs text-slate-400 font-medium">KC · knowledge component</p>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <Icon name="search" className="w-4 h-4" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search topics or KCs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all shadow-sm"
+              />
+            </div>
           </div>
           <div className="space-y-3">
-            {TOPICS.map((k, i) => (
+            {filteredTopics.map((k, i) => (
               <div key={k.t} className="bg-white rounded-2xl border border-slate-200 p-4 card-hover animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
                 <div className="flex justify-between items-center mb-2">
                   <span className="flex items-center gap-2.5"><span className="font-semibold text-slate-800 text-sm">{k.t}</span><span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">{k.code}</span></span>

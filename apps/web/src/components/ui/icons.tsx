@@ -20,6 +20,7 @@ const paths: Record<string, React.ReactNode> = {
   brain: <><path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08A2.5 2.5 0 0 0 12 19.5a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 12 4.5z"/><path d="M12 4.5V19"/></>,
   radar: <><circle cx="12" cy="12" r="10"/><path d="M12 12l6-4"/><circle cx="12" cy="12" r="2"/></>,
   plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+  search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
 };
 export function Icon({ name, className = "w-5 h-5", strokeWidth = 2 }: { name: string; className?: string; strokeWidth?: number }) {
   return (
