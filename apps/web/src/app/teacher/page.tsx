@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
@@ -135,6 +135,61 @@ export default function TeacherDashboard() {
           <StatCard icon="radar" label="High / Critical" value={highCount} accent="amber" />
           <StatCard icon="check" label="Resolved" value={resolvedCount} accent="emerald" />
         </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-fade-up">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <Icon name="chart" className="w-5 h-5 text-sky-600" /> Classroom Skill Matrix (Real-time)
+              </h2>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Cohort learning gaps tracked across core Array Knowledge Components</p>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-emerald-500" /> Mastered (≥80%)</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-amber-500" /> Developing (50-80%)</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded bg-rose-500" /> At Risk (&lt;50%)</span>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[650px] grid grid-cols-5 gap-3 border border-slate-100 bg-slate-50/50 rounded-2xl p-4">
+              <div className="font-bold text-xs text-slate-400 self-center">Student</div>
+              <div className="text-center font-bold text-xs text-slate-500 bg-white border border-slate-100 rounded-xl p-2.5">
+                KC-001<br/><span className="text-[9px] font-semibold text-slate-400">Declaration</span>
+              </div>
+              <div className="text-center font-bold text-xs text-slate-500 bg-white border border-slate-100 rounded-xl p-2.5">
+                KC-002<br/><span className="text-[9px] font-semibold text-slate-400">Indexing</span>
+              </div>
+              <div className="text-center font-bold text-xs text-slate-500 bg-white border border-slate-100 rounded-xl p-2.5">
+                KC-003<br/><span className="text-[9px] font-semibold text-slate-400">Traversal</span>
+              </div>
+              <div className="text-center font-bold text-xs text-slate-500 bg-white border border-slate-100 rounded-xl p-2.5">
+                KC-004<br/><span className="text-[9px] font-semibold text-slate-400">Insertion</span>
+              </div>
+
+              {[
+                { name: "Aarav Patel", scores: [0.90, 0.45, 0.65, 0.85] },
+                { name: "Diya Sharma", scores: [0.85, 0.75, 0.60, 0.40] },
+                { name: "Rohan Gupta", scores: [0.70, 0.32, 0.55, 0.65] },
+                { name: "Ananya Rao", scores: [0.80, 0.65, 0.38, 0.50] },
+                { name: "Kabir Singh", scores: [0.41, 0.55, 0.60, 0.35] }
+              ].map((st) => (
+                <React.Fragment key={st.name}>
+                  <div className="text-xs font-semibold text-slate-700 self-center flex items-center gap-2">
+                    <InitialAvatar name={st.name} className="w-7 h-7 text-[10px]" /> {st.name}
+                  </div>
+                  {st.scores.map((sc, scidx) => {
+                    const bg = sc >= 0.8 ? "bg-emerald-500/10 text-emerald-700 border-emerald-200" : sc >= 0.5 ? "bg-amber-500/10 text-amber-700 border-amber-200" : "bg-rose-500/10 text-rose-700 border-rose-200";
+                    return (
+                      <div key={scidx} className={cn("text-center font-bold text-xs border rounded-xl py-3.5 shadow-sm transition-all hover:scale-[1.03] duration-150 cursor-help", bg)}>
+                        {Math.round(sc * 100)}%
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden animate-fade-up">
           <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-violet-500/25 blur-3xl" />
           <div className="flex flex-wrap items-center justify-between gap-4 relative">

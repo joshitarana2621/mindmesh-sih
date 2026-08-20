@@ -23,7 +23,7 @@ export default function StudentProgress() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3"><InitialAvatar name={name} className="w-9 h-9" /><h1 className="text-lg font-extrabold text-slate-900">My Learning Progress</h1></div>
-          <Link href="/student" className="inline-flex items-center gap-1 text-sm font-semibold text-violet-600 hover:text-violet-800 transition-colors"><Icon name="arrowLeft" className="w-4 h-4" /> Dashboard</Link>
+          <Link href="/student" className="inline-flex items-center gap-1 text-sm font-semibold text-sky-600 hover:text-violet-800 transition-colors"><Icon name="arrowLeft" className="w-4 h-4" /> Dashboard</Link>
         </div>
       </header>
       <main className="max-w-5xl mx-auto p-4 space-y-6">
@@ -45,13 +45,13 @@ export default function StudentProgress() {
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 p-6 card-hover animate-fade-up">
-          <h2 className="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2"><Icon name="sparkles" className="w-5 h-5 text-violet-600" /> Your Recommended Learning Path</h2>
+          <h2 className="text-lg font-extrabold text-slate-900 mb-4 flex items-center gap-2"><Icon name="sparkles" className="w-5 h-5 text-sky-600" /> Your Recommended Learning Path</h2>
           <div className="space-y-3">
             {red.map(k => <div key={k.code} className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl p-3.5"><span className="w-8 h-8 rounded-lg bg-rose-500 text-white flex items-center justify-center shrink-0"><Icon name="bell" className="w-4 h-4" /></span><div className="flex-1"><p className="font-semibold text-sm text-slate-800">{k.name}</p><p className="text-xs text-slate-500">Immediate support: 1-on-1 teacher explanation + recheck</p></div></div>)}
             {yellow.map(k => <div key={k.code} className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3.5"><span className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0"><Icon name="users" className="w-4 h-4" /></span><div className="flex-1"><p className="font-semibold text-sm text-slate-800">{k.name}</p><p className="text-xs text-slate-500">Peer practice with a classmate + extra questions</p></div></div>)}
             {green.map(k => <div key={k.code} className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5"><span className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0"><Icon name="grad" className="w-4 h-4" /></span><div className="flex-1"><p className="font-semibold text-sm text-slate-800">{k.name}</p><p className="text-xs text-slate-500">On track — try extension challenges or mentor a classmate</p></div></div>)}
           </div>
-          <Link href="/quiz" className="inline-flex items-center gap-2 mt-5 bg-brand text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-violet-500/30 hover:opacity-90 transition-all active:scale-[.98]">Continue Adaptive Practice <Icon name="arrowRight" className="w-4 h-4" /></Link>
+          <Link href="/quiz" className="inline-flex items-center gap-2 mt-5 bg-brand text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-blue-500/30 hover:opacity-90 transition-all active:scale-[.98]">Continue Adaptive Practice <Icon name="arrowRight" className="w-4 h-4" /></Link>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-fade-up">
           <h2 className="text-lg font-extrabold text-slate-900 mb-4">Topic-Level Mastery Detail</h2>
