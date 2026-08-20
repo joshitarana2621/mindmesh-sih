@@ -21,6 +21,55 @@ export default function TeacherDashboard() {
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "HIGH">("ALL");
   const [loading, setLoading] = useState(true);
+  const [expandedAI, setExpandedAI] = useState<Record<string, boolean>>({});
+  const [loadingAI, setLoadingAI] = useState<Record<string, boolean>>({});
+
+  const triggerAI = (id: string) => {
+    setLoadingAI(prev => ({ ...prev, [id]: true }));
+    setTimeout(() => {
+      setLoadingAI(prev => ({ ...prev, [id]: false }));
+      setExpandedAI(prev => ({ ...prev, [id]: true }));
+    }, 1000);
+  };
+
+  const AI_RECOMMENDATIONS: Record<string, { gap: string; plan: string[]; buddy: string }> = {
+    "Rohan Gupta": {
+      gap: "Confuses 0-based indexing with 1-based counting. Attempting to access index 'size' instead of 'size - 1'.",
+      plan: [
+        "Present a physical grid representing cells from index 0 to index 4.",
+        "Solve 3 boundary-check exercises on index-based offset calculations.",
+        "Perform a 2-minute trace logic walkthrough on the whiteboard."
+      ],
+      buddy: "Aarav Patel (90% mastery)"
+    },
+    "Ananya Rao": {
+      gap: "Off-by-one boundary error in traversal loops. Using '<=' instead of '<' loop comparison.",
+      plan: [
+        "Review syntax distinction between termination conditions (< vs <=).",
+        "Deploy a code trace table to track values in the final iteration.",
+        "Simulate index boundary execution step-by-step."
+      ],
+      buddy: "Diya Sharma (85% mastery)"
+    },
+    "Kabir Singh": {
+      gap: "Prerequisite Gap: Student is attempting to traverse arrays (KC-003) while declaration syntax (KC-001) is failing.",
+      plan: [
+        "Temporarily pause current traversal assignments.",
+        "Auto-assign 2 micro-modules focusing on array declaration syntax.",
+        "Verify base syntax mastery before resuming loops."
+      ],
+      buddy: "Aarav Patel (90% mastery)"
+    },
+    "Meera Nair": {
+      gap: "Stall Detected: Accuracy is highly erratic (guessing pattern) indicating lack of confidence.",
+      plan: [
+        "Convert standard MCQs to scaffolded drag-and-drop code blocks.",
+        "Provide 3 fill-in-the-blank traversal statements.",
+        "Assign 1 peer mentoring activity."
+      ],
+      buddy: "Rohan Gupta (80% mastery)"
+    }
+  };
   useSync();
   useEffect(() => {
     const load = async () => {
@@ -133,11 +182,58 @@ export default function TeacherDashboard() {
                   <p className="text-slate-600">{typeof i.evidence === "string" ? i.evidence : (JSON.stringify(i.evidence)||"").slice(0, 120)}</p>
                   <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5"><Icon name="zap" className="w-3.5 h-3.5" /> {i.triggerFamily} · {i.eventCount} aggregated events · {i.recommendedActionText || "Recommended: review topic with student"}</p>
                 </div>
-                <div className="mt-3.5 flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => act(i.id, "acknowledge")} disabled={i.status !== "OPEN"} className="gap-1.5"><Icon name="check" className="w-3.5 h-3.5" /> Acknowledge</Button>
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => act(i.id, "resolve")} disabled={i.status === "RESOLVED" || i.status === "DISMISSED"}><Icon name="check" className="w-3.5 h-3.5" /> Resolve + Recheck</Button>
-                  <Button size="sm" variant="ghost" onClick={() => act(i.id, "dismiss")} disabled={i.status === "RESOLVED" || i.status === "DISMISSED"}>Dismiss</Button>
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => act(i.id, "acknowledge")} disabled={i.status !== "OPEN"} className="gap-1.5"><Icon name="check" className="w-3.5 h-3.5" /> Acknowledge</Button>
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-1.5" onClick={() => act(i.id, "resolve")} disabled={i.status === "RESOLVED" || i.status === "DISMISSED"}><Icon name="check" className="w-3.5 h-3.5" /> Resolve + Recheck</Button>
+                    <Button size="sm" variant="ghost" onClick={() => act(i.id, "dismiss")} disabled={i.status === "RESOLVED" || i.status === "DISMISSED"}>Dismiss</Button>
+                  </div>
+                  
+                  {i.status === "OPEN" && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => triggerAI(i.id)} 
+                      disabled={loadingAI[i.id] || expandedAI[i.id]}
+                      className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 text-white font-bold gap-1.5 shadow-md shadow-violet-500/25"
+                    >
+                      <Icon name="sparkles" className="w-3.5 h-3.5" />
+                      {loadingAI[i.id] ? "Analyzing..." : expandedAI[i.id] ? "Copilot Analyzed" : "Reveal AI Action Plan"}
+                    </Button>
+                  )}
                 </div>
+
+                {loadingAI[i.id] && (
+                  <div className="mt-3 bg-violet-50/50 border border-dashed border-violet-200 rounded-xl p-4 flex items-center justify-center gap-2 text-violet-700 font-semibold text-xs animate-pulse">
+                    <Icon name="refresh" className="w-4 h-4 animate-spin" /> Analyzing learning gap with AI Copilot...
+                  </div>
+                )}
+
+                {expandedAI[i.id] && AI_RECOMMENDATIONS[i.studentName] && (() => {
+                  const rec = AI_RECOMMENDATIONS[i.studentName];
+                  return (
+                    <div className="mt-3 bg-gradient-to-br from-violet-50/70 to-indigo-50/70 border border-violet-100/80 rounded-xl p-4 animate-fade-up">
+                      <div className="flex items-center gap-2 text-violet-700 font-extrabold text-xs uppercase tracking-wide">
+                        <Icon name="sparkles" className="w-4 h-4 text-violet-600 animate-pulse" /> AI Copilot Learning Recommendation
+                      </div>
+                      <div className="mt-2.5 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-800 text-xs">Detected Skill Gap:</p>
+                        <p className="text-slate-600 text-xs mt-0.5">{rec.gap}</p>
+                      </div>
+                      <div className="mt-3 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-800 text-xs">Scaffolded Intervention Plan:</p>
+                        <ul className="list-disc list-inside space-y-1 text-slate-600 text-xs mt-1">
+                          {rec.plan.map((p, idx) => <li key={idx}>{p}</li>)}
+                        </ul>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs border-t border-violet-100/50 pt-2.5">
+                        <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <Icon name="users" className="w-3.5 h-3.5 text-violet-500" /> Peer Study Buddy: <span className="text-violet-700 font-bold">{rec.buddy}</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-violet-500 bg-violet-100 rounded px-1.5 py-0.5">Scaffolded Mode</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ); })}
           </div>
