@@ -7,6 +7,7 @@ async function main() {
 
   const institution = await prisma.institution.create({
     data: {
+      id: "demo-institution",
       name: "Demo School",
       code: "DEMO-001",
       address: "123 Education Lane",
@@ -16,8 +17,9 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
+      id: "demo-user-admin",
       institutionId: institution.id,
-      name: "Admin User",
+      name: "Demo Admin",
       email: "admin@demoschool.edu",
       role: "INSTITUTION_ADMIN",
     },
@@ -25,9 +27,10 @@ async function main() {
 
   const teacher1 = await prisma.user.create({
     data: {
+      id: "demo-user-teacher",
       institutionId: institution.id,
-      name: "Priya Sharma",
-      email: "priya@demoschool.edu",
+      name: "Demo Teacher",
+      email: "teacher@demoschool.edu",
       role: "TEACHER",
       teacherProfile: {
         create: { institutionId: institution.id, subject: "Mathematics" },
@@ -65,10 +68,12 @@ async function main() {
 
   const students = [];
   for (let i = 1; i <= 5; i++) {
+    const isDemoStudent = i === 1;
     const student = await prisma.user.create({
       data: {
+        id: isDemoStudent ? "demo-user-student1" : undefined,
         institutionId: institution.id,
-        name: `Student ${i}`,
+        name: isDemoStudent ? "Aarav" : `Student ${i}`,
         email: `student${i}@demoschool.edu`,
         role: "STUDENT",
         studentProfile: {
