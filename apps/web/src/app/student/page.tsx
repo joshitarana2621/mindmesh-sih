@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
 import { useKioskStore } from "@/stores/kiosk-store";
@@ -20,10 +21,26 @@ export default function StudentDashboard() {
   const name = kiosk.currentProfile?.name || auth.name || "Student";
   useSync();
   const conn = useConnectivityStore(s => s.state);
+  const [topics, setTopics] = useState(TOPICS);
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredTopics = TOPICS.filter(t => t.t.toLowerCase().includes(searchQuery.toLowerCase()) || t.code.toLowerCase().includes(searchQuery.toLowerCase()));
+  
+  useEffect(() => {
+    const fetchMastery = async () => {
+      try {
+        const res = await api<any[]>("/api/v1/students/me/mastery");
+        if (res && res.length > 0) {
+          setTopics(res.map(m => ({ t: m.kcName, m: m.mastery, code: m.kcCode })));
+        }
+      } catch (err) {
+        console.error("Using offline mock topics", err);
+      }
+    };
+    fetchMastery();
+  }, []);
+
+  const filteredTopics = topics.filter(t => t.t.toLowerCase().includes(searchQuery.toLowerCase()) || t.code.toLowerCase().includes(searchQuery.toLowerCase()));
   const queue = useConnectivityStore(s => s.syncQueueCount);
-  const next = TOPICS.reduce((a, b) => (a.m < b.m ? a : b));
+  const next = topics.reduce((a, b) => (a.m < b.m ? a : b));
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
