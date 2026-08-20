@@ -30,7 +30,7 @@ export default function AdminPage() {
       setName("");
       setGradeBand("");
       setSubject("");
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || "Failed to create classroom");
     } finally {
       setSubmitting(false);
