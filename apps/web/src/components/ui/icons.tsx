@@ -1,4 +1,5 @@
 import * as React from "react";
+
 const paths: Record<string, React.ReactNode> = {
   zap: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></>,
   chart: <><path d="M18 20V10M12 20V4M6 20v-6" /></>,
@@ -21,7 +22,10 @@ const paths: Record<string, React.ReactNode> = {
   radar: <><circle cx="12" cy="12" r="10"/><path d="M12 12l6-4"/><circle cx="12" cy="12" r="2"/></>,
   plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
   search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+  play: <><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" /></>,
+  close: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
 };
+
 export function Icon({ name, className = "w-5 h-5", strokeWidth = 2 }: { name: string; className?: string; strokeWidth?: number }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
@@ -29,4 +33,5 @@ export function Icon({ name, className = "w-5 h-5", strokeWidth = 2 }: { name: s
     </svg>
   );
 }
+
 export { paths };

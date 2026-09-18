@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icons";
 
@@ -11,6 +14,8 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+  const [showDemoModal, setShowDemoModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-10">
@@ -30,39 +35,195 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative overflow-hidden bg-brand pb-24 pt-20 text-white">
-          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-24 w-96 h-96 rounded-full bg-fuchsia-400/20 blur-3xl" />
-          <div className="relative max-w-4xl mx-auto px-4 text-center animate-fade-up">
-            <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold mb-6">
-              <Icon name="wifi" className="w-3.5 h-3.5" /> Built for low-connectivity classrooms
-            </span>
-            <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight">
-              Personalized learning that works{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-emerald-200">even offline</span>
-            </h1>
-            <p className="mt-5 text-lg text-white/85 max-w-2xl mx-auto">
-              Micro-assessments, real-time teacher radar, adaptive remediation, peer pods and rotation-based classrooms — designed for overcrowded schools.
-            </p>
-            <div className="mt-9 flex flex-col sm:flex-row gap-3.5 justify-center">
-              <Link href="/kiosk" className="inline-flex items-center justify-center gap-2 bg-white text-violet-700 px-7 py-3.5 rounded-xl font-bold hover:bg-violet-50 shadow-lg transition-all active:scale-[.98]">
-                <Icon name="zap" className="w-5 h-5" /> Try Student Mode
-              </Link>
-              <Link href="/login" className="inline-flex items-center justify-center gap-2 bg-violet-900/40 backdrop-blur border border-white/25 text-white px-7 py-3.5 rounded-xl font-bold hover:bg-violet-900/60 transition-all active:scale-[.98]">
-                Teacher Sign In <Icon name="arrowRight" className="w-5 h-5" />
-              </Link>
+        {/* Redesigned Problem-First Hero Section for SIH 26207 */}
+        <section className="relative overflow-hidden bg-brand pb-20 pt-16 sm:pt-24 text-white" aria-labelledby="hero-heading">
+          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-40 -left-24 w-96 h-96 rounded-full bg-sky-400/20 blur-3xl pointer-events-none" />
+          
+          <div className="relative max-w-5xl mx-auto px-4 text-center animate-fade-up">
+            {/* SIH 26207 Badge */}
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide text-sky-200 mb-6 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+              <span>SIH 26207 Problem-First Story</span>
+              <span className="text-white/40" aria-hidden="true">·</span>
+              <span className="text-white/90">Personalized Blended Learning</span>
             </div>
-            <div className="mt-12 grid grid-cols-3 gap-4 max-w-lg mx-auto">
-              {[["2 min", "micro-checks"], ["0 Mbps", "required"], ["1 tap", "to assess"]].map(([v, l]) => (
-                <div key={l} className="bg-white/10 backdrop-blur rounded-xl py-3 border border-white/15">
-                  <p className="text-xl font-extrabold">{v}</p>
-                  <p className="text-[11px] text-white/75 uppercase tracking-wide">{l}</p>
+
+            {/* Headline */}
+            <h1 id="hero-heading" className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight text-white max-w-4xl mx-auto">
+              1 Teacher. 45 Students.
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-sky-200 via-teal-200 to-amber-200 mt-2.5">
+                45 Different Learning Speeds.
+              </span>
+            </h1>
+
+            {/* Subheading */}
+            <p className="mt-6 text-base sm:text-lg lg:text-xl text-white/85 max-w-3xl mx-auto font-normal leading-relaxed">
+              MindMesh is an AI-powered learning platform that identifies learning gaps, creates personalized learning paths, and helps teachers intervene at the right time.
+            </p>
+
+            {/* CTAs */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/login"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white text-[#0A1931] px-8 py-3.5 rounded-xl font-bold hover:bg-slate-100 shadow-xl shadow-black/10 hover:shadow-2xl transition-all duration-200 active:scale-[0.98] group"
+              >
+                <span>Try Demo</span>
+                <Icon name="arrowRight" className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowDemoModal(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-white px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-sky-300"
+                aria-haspopup="dialog"
+              >
+                <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center" aria-hidden="true">
+                  <Icon name="play" className="w-3 h-3 text-white" />
+                </span>
+                <span>Watch 3-min Demo</span>
+              </button>
+            </div>
+
+            {/* 3 Impact Cards */}
+            <div className="mt-14 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto text-left">
+              {/* Card 1: AI Learning DNA */}
+              <div className="relative rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-6 hover:bg-white/[0.14] hover:border-white/25 transition-all duration-300 group shadow-lg">
+                <div className="w-11 h-11 rounded-xl bg-sky-400/20 text-sky-200 flex items-center justify-center mb-4 border border-sky-300/30 group-hover:scale-105 transition-transform" aria-hidden="true">
+                  <Icon name="brain" className="w-5 h-5 text-sky-200" />
                 </div>
-              ))}
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-white tracking-tight">AI Learning DNA</h2>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded-full border border-sky-400/30">Adaptive</span>
+                </div>
+                <p className="text-sm text-white/75 leading-relaxed">
+                  Pinpoints exact cognitive misconceptions across Knowledge Components (KCs) and maps individualized micro-remediation paths for each learner.
+                </p>
+              </div>
+
+              {/* Card 2: Offline First */}
+              <div className="relative rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-6 hover:bg-white/[0.14] hover:border-white/25 transition-all duration-300 group shadow-lg">
+                <div className="w-11 h-11 rounded-xl bg-emerald-400/20 text-emerald-200 flex items-center justify-center mb-4 border border-emerald-300/30 group-hover:scale-105 transition-transform" aria-hidden="true">
+                  <Icon name="offline" className="w-5 h-5 text-emerald-200" />
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-white tracking-tight">Offline First</h2>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30">0 Mbps OK</span>
+                </div>
+                <p className="text-sm text-white/75 leading-relaxed">
+                  Full curriculum assessment runs locally on single or shared devices. Automatically reconciles telemetry the instant connection returns.
+                </p>
+              </div>
+
+              {/* Card 3: Teacher Heatmap */}
+              <div className="relative rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-6 hover:bg-white/[0.14] hover:border-white/25 transition-all duration-300 group shadow-lg">
+                <div className="w-11 h-11 rounded-xl bg-amber-400/20 text-amber-200 flex items-center justify-center mb-4 border border-amber-300/30 group-hover:scale-105 transition-transform" aria-hidden="true">
+                  <Icon name="radar" className="w-5 h-5 text-amber-200" />
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-white tracking-tight">Teacher Heatmap</h2>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30">Real-Time</span>
+                </div>
+                <p className="text-sm text-white/75 leading-relaxed">
+                  Early-warning radar turns 45 learning streams into 1 clear actionable view. Identifies who needs help, why, and what intervention to run.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
+        {/* Demo Video Walkthrough Modal */}
+        {showDemoModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="demo-modal-title"
+          >
+            <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-in">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center font-bold text-sm">
+                    <Icon name="play" className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h3 id="demo-modal-title" className="text-base font-bold text-slate-900">
+                      MindMesh 3-Minute Walkthrough
+                    </h3>
+                    <p className="text-xs text-slate-500">Problem Statement SIH 26207 Solution Architecture</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDemoModal(false)}
+                  className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                  aria-label="Close walkthrough modal"
+                >
+                  <Icon name="close" className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Simulated Interactive Video Screen */}
+                <div className="relative aspect-video rounded-xl bg-gradient-to-br from-slate-900 via-[#1A3D63] to-[#0A1931] border border-slate-800 flex flex-col items-center justify-center text-white p-6 shadow-inner overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(74,127,167,0.3),transparent_70%)]" />
+                  <div className="relative text-center space-y-3 max-w-md">
+                    <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center mx-auto shadow-xl group hover:scale-110 transition-transform">
+                      <Icon name="play" className="w-7 h-7 text-white" />
+                    </div>
+                    <h4 className="text-xl font-bold tracking-tight text-white">Live System Demonstration</h4>
+                    <p className="text-xs text-white/80 leading-relaxed">
+                      Watch how MindMesh automates formative micro-assessments, categorizes cognitive gaps via AI Learning DNA, and signals teachers on the live radar.
+                    </p>
+                  </div>
+                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] text-white/70">
+                    <span className="font-mono">01:42 / 03:00</span>
+                    <span className="bg-white/15 px-2 py-0.5 rounded text-[10px] font-semibold">1080p HD</span>
+                  </div>
+                </div>
+
+                {/* 3 Quick Chapters */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <p className="text-[11px] font-bold text-sky-600 uppercase">00:00 · The Problem</p>
+                    <p className="text-xs font-semibold text-slate-800 mt-1">45 Students, 1 Teacher</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Overcrowded classrooms and silent disengagement.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <p className="text-[11px] font-bold text-emerald-600 uppercase">01:05 · AI Solution</p>
+                    <p className="text-xs font-semibold text-slate-800 mt-1">Learning DNA & Offline PWA</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Knowledge component graphs and zero-latency caching.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <p className="text-[11px] font-bold text-violet-600 uppercase">02:10 · Intervention</p>
+                    <p className="text-xs font-semibold text-slate-800 mt-1">Radar & Peer Pods</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Automated student pairing and instant remediation.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-slate-500">Want to interact with real data instead?</p>
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoModal(false)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <Link
+                    href="/login"
+                    onClick={() => setShowDemoModal(false)}
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-brand text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md shadow-violet-500/30 hover:opacity-90 transition-all"
+                  >
+                    Launch Interactive Demo <Icon name="arrowRight" className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Existing problem cards section */}
         <section className="max-w-6xl mx-auto px-4 pb-16 mt-12">
           <div className="text-center mb-8">
             <span className="inline-flex items-center gap-1.5 bg-violet-50 text-violet-700 border border-violet-200 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wide">The 3 problems we fix</span>
@@ -88,6 +249,7 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Existing features section */}
         <section className="max-w-6xl mx-auto px-4 pb-16 mt-10">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map((f, i) => (
