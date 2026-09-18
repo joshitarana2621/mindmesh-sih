@@ -1,4 +1,4 @@
-const CACHE = "eduadpat-v2";
+const CACHE = "eduadpat-v3";
 const CORE = [
   "/",
   "/offline",

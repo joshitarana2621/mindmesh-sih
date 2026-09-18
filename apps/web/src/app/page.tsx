@@ -20,6 +20,7 @@ export default function LandingPage() {
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [customVideoUrl, setCustomVideoUrl] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [activeTab, setActiveTab] = useState<"interactive" | "video">("interactive");
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -115,11 +116,16 @@ export default function LandingPage() {
               </Link>
               <button
                 type="button"
-                onClick={() => setShowDemoModal(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-white px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-sky-300"
+                onClick={() => {
+                  setShowDemoModal(true);
+                  setIsPlaying(true);
+                  setCurrentTime(0);
+                  setActiveTab("interactive");
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-white px-7 py-3.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-sky-300 cursor-pointer"
                 aria-haspopup="dialog"
               >
-                <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center" aria-hidden="true">
+                <span className="w-6 h-6 rounded-full bg-emerald-500/80 flex items-center justify-center animate-pulse" aria-hidden="true">
                   <Icon name="play" className="w-3 h-3 text-white" />
                 </span>
                 <span>Watch 3-min Demo</span>
@@ -183,10 +189,10 @@ export default function LandingPage() {
           >
             <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-in max-h-[95vh] flex flex-col">
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-slate-100 bg-slate-50/90 shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 sm:px-6 py-3.5 border-b border-slate-100 bg-slate-50/90 gap-3 shrink-0">
                 <div className="flex items-center gap-2.5">
                   <span className="w-8 h-8 rounded-xl bg-brand text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                    <Icon name="play" className="w-4 h-4" />
+                    <Icon name="play" className="w-4 h-4 translate-x-0.5" />
                   </span>
                   <div>
                     <h3 id="demo-modal-title" className="text-sm sm:text-base font-extrabold text-slate-900">
@@ -197,68 +203,140 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowDemoModal(false);
-                    setIsPlaying(false);
-                  }}
-                  className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
-                  aria-label="Close walkthrough modal"
-                >
-                  <Icon name="close" className="w-4 h-4" />
-                </button>
+
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  {/* Mode switcher tabs */}
+                  <div className="inline-flex rounded-xl bg-slate-200/90 p-0.5 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("interactive");
+                        setIsPlaying(true);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeTab === "interactive"
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>⚡ AI Simulation</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("video");
+                        setIsPlaying(false);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeTab === "video"
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>🎬 Real Video</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowDemoModal(false);
+                      setIsPlaying(false);
+                    }}
+                    className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                    aria-label="Close walkthrough modal"
+                  >
+                    <Icon name="close" className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body */}
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
-                {/* Embedded YouTube / Custom Video Player or Interactive Animated Player */}
-                {customVideoUrl && getYouTubeEmbed(customVideoUrl) ? (
-                  <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-lg border border-slate-800">
-                    <iframe
-                      src={getYouTubeEmbed(customVideoUrl)!}
-                      title="MindMesh Walkthrough Video"
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                {activeTab === "video" ? (
+                  /* Real Video Tab: Embedded Player with Native Controls */
+                  <div className="space-y-3">
+                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-lg border border-slate-800">
+                      <iframe
+                        src={
+                          customVideoUrl && getYouTubeEmbed(customVideoUrl)
+                            ? getYouTubeEmbed(customVideoUrl)!
+                            : "https://www.youtube-nocookie.com/embed/ujXnsh5j454?autoplay=1"
+                        }
+                        title="MindMesh Walkthrough Video"
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <span className="text-xs font-bold text-slate-700 shrink-0">Custom Video:</span>
+                      <input
+                        type="url"
+                        value={customVideoUrl}
+                        onChange={(e) => setCustomVideoUrl(e.target.value)}
+                        placeholder="Paste YouTube link (e.g. https://youtu.be/...)"
+                        className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                      />
+                      {customVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomVideoUrl("")}
+                          className="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1 cursor-pointer"
+                        >
+                          Reset Default
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  /* Interactive Animated Video Walkthrough Screen */
-                  <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-slate-950 via-[#0A1931] to-[#1A3D63] border border-slate-800 shadow-2xl flex flex-col justify-between p-3 sm:p-5 text-white select-none overflow-hidden group">
+                  /* Interactive Animated AI Simulation Screen */
+                  <div
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className="relative aspect-video rounded-2xl bg-gradient-to-br from-slate-950 via-[#0A1931] to-[#1A3D63] border border-slate-800 shadow-2xl flex flex-col justify-between p-3 sm:p-5 text-white select-none overflow-hidden group cursor-pointer"
+                    title={isPlaying ? "Click to Pause" : "Click to Play"}
+                  >
                     {/* Background Radial Glow */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(74,127,167,0.35),transparent_75%)] pointer-events-none" />
 
                     {/* Top Screen Overlay: Current Chapter Badge & Resolution */}
                     <div className="relative z-10 flex items-center justify-between text-[11px]">
-                      <span className="inline-flex items-center gap-1.5 bg-black/50 backdrop-blur px-3 py-1 rounded-full border border-white/20 font-bold text-sky-200">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        {currentTime < 65
-                          ? "Chapter 1: The Problem (45 Students, 1 Teacher)"
-                          : currentTime < 130
-                          ? "Chapter 2: AI Solution (Learning DNA & Offline PWA)"
-                          : "Chapter 3: Intervention (Radar & Peer Pods)"}
+                      <span className="inline-flex items-center gap-1.5 bg-black/60 backdrop-blur px-3 py-1 rounded-full border border-white/20 font-bold text-sky-200">
+                        <span className={`w-2 h-2 rounded-full ${isPlaying ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+                        <span>
+                          {isPlaying ? "Playing: " : "Paused: "}
+                          {currentTime < 65
+                            ? "Chapter 1: The Problem (45 Students, 1 Teacher)"
+                            : currentTime < 130
+                            ? "Chapter 2: AI Solution (Learning DNA & Offline PWA)"
+                            : "Chapter 3: Intervention (Radar & Peer Pods)"}
+                        </span>
                       </span>
                       <span className="bg-white/15 backdrop-blur px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider">
                         1080p HD · SIH 26207
                       </span>
                     </div>
 
-                    {/* Center Animated Scene Display */}
-                    {!isPlaying && currentTime === 0 ? (
-                      /* Initial Start Poster */
+                    {/* Center Display: Glowing Play Button when Paused, or Dynamic Interactive Scene when Playing */}
+                    {!isPlaying ? (
                       <div
-                        onClick={() => setIsPlaying(true)}
-                        className="relative z-10 text-center space-y-3 max-w-md mx-auto cursor-pointer my-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsPlaying(true);
+                        }}
+                        className="relative z-20 text-center space-y-3 max-w-md mx-auto my-auto p-4 sm:p-5 rounded-2xl bg-black/65 backdrop-blur-md border border-white/25 shadow-2xl hover:bg-black/75 hover:scale-[1.02] transition-all cursor-pointer"
                       >
-                        <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 flex items-center justify-center mx-auto shadow-2xl hover:scale-110 active:scale-95 transition-all group">
+                        <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center mx-auto shadow-2xl ring-4 ring-emerald-400/40 animate-pulse transition-all">
                           <Icon name="play" className="w-8 sm:w-9 h-8 sm:h-9 text-white translate-x-0.5" />
                         </div>
                         <div>
-                          <h4 className="text-lg sm:text-xl font-black tracking-tight text-white">
-                            Click to Play 3-Minute Walkthrough
-                          </h4>
-                          <p className="text-xs text-white/80 leading-relaxed mt-1">
-                            Interactive animated demonstration of MindMesh solving overcrowded classroom disengagement and offline-first mastery.
+                          <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase">
+                            <span>▶ CLICK HERE TO PLAY</span>
+                          </div>
+                          <p className="text-xs text-white/90 leading-relaxed mt-2">
+                            {currentTime === 0
+                              ? "Start 3-minute interactive demonstration of MindMesh classroom telemetry."
+                              : `Resume from ${formatDuration(currentTime)} (or click anywhere on screen)`}
                           </p>
                         </div>
                       </div>
@@ -382,7 +460,10 @@ export default function LandingPage() {
                     )}
 
                     {/* Bottom Controls & Timeline Bar */}
-                    <div className="relative z-10 space-y-2 bg-black/50 backdrop-blur-md p-2.5 rounded-xl border border-white/15">
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="relative z-20 space-y-2 bg-black/60 backdrop-blur-md p-2.5 rounded-xl border border-white/15"
+                    >
                       {/* Clickable Scrubber Slider */}
                       <div className="relative flex items-center">
                         <input
@@ -393,7 +474,7 @@ export default function LandingPage() {
                           onChange={(e) => {
                             setCurrentTime(Number(e.target.value));
                           }}
-                          className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-sky-400 hover:accent-sky-300"
+                          className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400 hover:accent-emerald-300"
                         />
                       </div>
 
@@ -403,16 +484,21 @@ export default function LandingPage() {
                           <button
                             type="button"
                             onClick={() => setIsPlaying(!isPlaying)}
-                            className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+                            className={`px-3 py-1 rounded-lg flex items-center gap-1.5 font-bold text-xs transition-all cursor-pointer ${
+                              isPlaying
+                                ? "bg-amber-500 hover:bg-amber-400 text-slate-950"
+                                : "bg-emerald-500 hover:bg-emerald-400 text-white animate-pulse"
+                            }`}
                             aria-label={isPlaying ? "Pause video" : "Play video"}
                           >
-                            <Icon name={isPlaying ? "close" : "play"} className="w-3.5 h-3.5" />
+                            <Icon name={isPlaying ? "pause" : "play"} className="w-3.5 h-3.5" />
+                            <span>{isPlaying ? "Pause" : "Play"}</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setCurrentTime(Math.max(0, currentTime - 10))}
-                            className="text-[11px] text-white/80 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors"
+                            className="text-[11px] text-white/80 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
                             title="Rewind 10 seconds"
                           >
                             -10s
@@ -421,7 +507,7 @@ export default function LandingPage() {
                           <button
                             type="button"
                             onClick={() => setCurrentTime(Math.min(180, currentTime + 10))}
-                            className="text-[11px] text-white/80 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors"
+                            className="text-[11px] text-white/80 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
                             title="Forward 10 seconds"
                           >
                             +10s
@@ -440,7 +526,7 @@ export default function LandingPage() {
                               const nextIdx = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
                               setPlaybackSpeed(speeds[nextIdx]);
                             }}
-                            className="text-[10px] font-mono font-bold bg-white/15 px-2 py-0.5 rounded hover:bg-white/25 transition-colors"
+                            className="text-[10px] font-mono font-bold bg-white/15 px-2 py-0.5 rounded hover:bg-white/25 transition-colors cursor-pointer"
                           >
                             {playbackSpeed}x
                           </button>
@@ -451,7 +537,7 @@ export default function LandingPage() {
                               setCurrentTime(0);
                               setIsPlaying(true);
                             }}
-                            className="text-[11px] text-white/70 hover:text-white flex items-center gap-1"
+                            className="text-[11px] text-white/70 hover:text-white flex items-center gap-1 cursor-pointer"
                             title="Restart Walkthrough"
                           >
                             <Icon name="refresh" className="w-3 h-3" />
@@ -467,20 +553,27 @@ export default function LandingPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
-                    onClick={() => jumpToChapter(0)}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                      currentTime < 65
-                        ? "bg-sky-50/80 border-sky-300 ring-2 ring-sky-200/80 shadow-sm"
-                        : "bg-slate-50 border-slate-200 hover:border-sky-200"
+                    onClick={() => {
+                      setActiveTab("interactive");
+                      jumpToChapter(0);
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer group ${
+                      activeTab === "interactive" && currentTime < 65
+                        ? "bg-sky-50/90 border-sky-300 ring-2 ring-sky-200/80 shadow-sm"
+                        : "bg-slate-50 border-slate-200 hover:border-sky-300"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-[11px] font-extrabold text-sky-600 uppercase">
                         00:00 · The Problem
                       </p>
-                      {currentTime < 65 && isPlaying && (
-                        <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded">
+                      {activeTab === "interactive" && currentTime < 65 && isPlaying ? (
+                        <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-1.5 py-0.5 rounded">
                           Playing ▶
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-slate-400 group-hover:text-sky-600">
+                          Play ▶
                         </span>
                       )}
                     </div>
@@ -492,20 +585,27 @@ export default function LandingPage() {
 
                   <button
                     type="button"
-                    onClick={() => jumpToChapter(65)}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                      currentTime >= 65 && currentTime < 130
-                        ? "bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-200/80 shadow-sm"
-                        : "bg-slate-50 border-slate-200 hover:border-emerald-200"
+                    onClick={() => {
+                      setActiveTab("interactive");
+                      jumpToChapter(65);
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer group ${
+                      activeTab === "interactive" && currentTime >= 65 && currentTime < 130
+                        ? "bg-emerald-50/90 border-emerald-300 ring-2 ring-emerald-200/80 shadow-sm"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-300"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-[11px] font-extrabold text-emerald-600 uppercase">
                         01:05 · AI Solution
                       </p>
-                      {currentTime >= 65 && currentTime < 130 && isPlaying && (
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                      {activeTab === "interactive" && currentTime >= 65 && currentTime < 130 && isPlaying ? (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
                           Playing ▶
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-slate-400 group-hover:text-emerald-600">
+                          Play ▶
                         </span>
                       )}
                     </div>
@@ -519,20 +619,27 @@ export default function LandingPage() {
 
                   <button
                     type="button"
-                    onClick={() => jumpToChapter(130)}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                      currentTime >= 130
-                        ? "bg-violet-50/80 border-violet-300 ring-2 ring-violet-200/80 shadow-sm"
-                        : "bg-slate-50 border-slate-200 hover:border-violet-200"
+                    onClick={() => {
+                      setActiveTab("interactive");
+                      jumpToChapter(130);
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer group ${
+                      activeTab === "interactive" && currentTime >= 130
+                        ? "bg-violet-50/90 border-violet-300 ring-2 ring-violet-200/80 shadow-sm"
+                        : "bg-slate-50 border-slate-200 hover:border-violet-300"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-[11px] font-extrabold text-violet-600 uppercase">
                         02:10 · Intervention
                       </p>
-                      {currentTime >= 130 && isPlaying && (
-                        <span className="text-[10px] font-bold text-violet-700 bg-violet-100 px-1.5 py-0.2 rounded">
+                      {activeTab === "interactive" && currentTime >= 130 && isPlaying ? (
+                        <span className="text-[10px] font-bold text-violet-700 bg-violet-100 px-1.5 py-0.5 rounded">
                           Playing ▶
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-slate-400 group-hover:text-violet-600">
+                          Play ▶
                         </span>
                       )}
                     </div>
@@ -541,40 +648,6 @@ export default function LandingPage() {
                       Automated student pairing and instant remediation.
                     </p>
                   </button>
-                </div>
-
-                {/* Option to load external YouTube / MP4 video */}
-                <div className="pt-2">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <button
-                      type="button"
-                      onClick={() => setShowUrlInput(!showUrlInput)}
-                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 underline transition-colors"
-                    >
-                      {showUrlInput ? "Hide custom video link" : "Have an external YouTube/MP4 link? Click here"}
-                    </button>
-                  </div>
-
-                  {showUrlInput && (
-                    <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 flex gap-2">
-                      <input
-                        type="url"
-                        value={customVideoUrl}
-                        onChange={(e) => setCustomVideoUrl(e.target.value)}
-                        placeholder="Paste YouTube or video URL (e.g. https://youtu.be/xxx)..."
-                        className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
-                      />
-                      {customVideoUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setCustomVideoUrl("")}
-                          className="text-xs text-slate-500 hover:text-slate-800 font-bold px-2"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
 
