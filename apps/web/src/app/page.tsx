@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icons";
 
@@ -15,6 +15,48 @@ const FEATURES = [
 
 export default function LandingPage() {
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0); // 0 to 180
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [customVideoUrl, setCustomVideoUrl] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (showDemoModal && isPlaying) {
+      timer = setInterval(() => {
+        setCurrentTime((prev) => {
+          if (prev >= 180) {
+            setIsPlaying(false);
+            return 180;
+          }
+          return prev + 1;
+        });
+      }, 1000 / playbackSpeed);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [showDemoModal, isPlaying, playbackSpeed]);
+
+  const formatDuration = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const jumpToChapter = (seconds: number) => {
+    setCurrentTime(seconds);
+    setIsPlaying(true);
+  };
+
+  const getYouTubeEmbed = (url: string): string | null => {
+    if (!url) return null;
+    const match = url.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/
+    );
+    return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1` : null;
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -134,26 +176,32 @@ export default function LandingPage() {
         {/* Demo Video Walkthrough Modal */}
         {showDemoModal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in"
             role="dialog"
             aria-modal="true"
             aria-labelledby="demo-modal-title"
           >
-            <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-in">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+            <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-in max-h-[95vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-slate-100 bg-slate-50/90 shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center font-bold text-sm">
+                  <span className="w-8 h-8 rounded-xl bg-brand text-white flex items-center justify-center font-bold text-sm shadow-sm">
                     <Icon name="play" className="w-4 h-4" />
                   </span>
                   <div>
-                    <h3 id="demo-modal-title" className="text-base font-bold text-slate-900">
+                    <h3 id="demo-modal-title" className="text-sm sm:text-base font-extrabold text-slate-900">
                       MindMesh 3-Minute Walkthrough
                     </h3>
-                    <p className="text-xs text-slate-500">Problem Statement SIH 26207 Solution Architecture</p>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Problem Statement SIH 26207 Solution Architecture
+                    </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowDemoModal(false)}
+                  onClick={() => {
+                    setShowDemoModal(false);
+                    setIsPlaying(false);
+                  }}
                   className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
                   aria-label="Close walkthrough modal"
                 >
@@ -161,51 +209,387 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
-                {/* Simulated Interactive Video Screen */}
-                <div className="relative aspect-video rounded-xl bg-gradient-to-br from-slate-900 via-[#1A3D63] to-[#0A1931] border border-slate-800 flex flex-col items-center justify-center text-white p-6 shadow-inner overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(74,127,167,0.3),transparent_70%)]" />
-                  <div className="relative text-center space-y-3 max-w-md">
-                    <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center mx-auto shadow-xl group hover:scale-110 transition-transform">
-                      <Icon name="play" className="w-7 h-7 text-white" />
+              {/* Modal Body */}
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
+                {/* Embedded YouTube / Custom Video Player or Interactive Animated Player */}
+                {customVideoUrl && getYouTubeEmbed(customVideoUrl) ? (
+                  <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-lg border border-slate-800">
+                    <iframe
+                      src={getYouTubeEmbed(customVideoUrl)!}
+                      title="MindMesh Walkthrough Video"
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  /* Interactive Animated Video Walkthrough Screen */
+                  <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-slate-950 via-[#0A1931] to-[#1A3D63] border border-slate-800 shadow-2xl flex flex-col justify-between p-3 sm:p-5 text-white select-none overflow-hidden group">
+                    {/* Background Radial Glow */}
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(74,127,167,0.35),transparent_75%)] pointer-events-none" />
+
+                    {/* Top Screen Overlay: Current Chapter Badge & Resolution */}
+                    <div className="relative z-10 flex items-center justify-between text-[11px]">
+                      <span className="inline-flex items-center gap-1.5 bg-black/50 backdrop-blur px-3 py-1 rounded-full border border-white/20 font-bold text-sky-200">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        {currentTime < 65
+                          ? "Chapter 1: The Problem (45 Students, 1 Teacher)"
+                          : currentTime < 130
+                          ? "Chapter 2: AI Solution (Learning DNA & Offline PWA)"
+                          : "Chapter 3: Intervention (Radar & Peer Pods)"}
+                      </span>
+                      <span className="bg-white/15 backdrop-blur px-2.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider">
+                        1080p HD · SIH 26207
+                      </span>
                     </div>
-                    <h4 className="text-xl font-bold tracking-tight text-white">Live System Demonstration</h4>
-                    <p className="text-xs text-white/80 leading-relaxed">
-                      Watch how MindMesh automates formative micro-assessments, categorizes cognitive gaps via AI Learning DNA, and signals teachers on the live radar.
+
+                    {/* Center Animated Scene Display */}
+                    {!isPlaying && currentTime === 0 ? (
+                      /* Initial Start Poster */
+                      <div
+                        onClick={() => setIsPlaying(true)}
+                        className="relative z-10 text-center space-y-3 max-w-md mx-auto cursor-pointer my-auto"
+                      >
+                        <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 flex items-center justify-center mx-auto shadow-2xl hover:scale-110 active:scale-95 transition-all group">
+                          <Icon name="play" className="w-8 sm:w-9 h-8 sm:h-9 text-white translate-x-0.5" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg sm:text-xl font-black tracking-tight text-white">
+                            Click to Play 3-Minute Walkthrough
+                          </h4>
+                          <p className="text-xs text-white/80 leading-relaxed mt-1">
+                            Interactive animated demonstration of MindMesh solving overcrowded classroom disengagement and offline-first mastery.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Dynamic Scene Content based on currentTime */
+                      <div className="relative z-10 flex-1 flex flex-col items-center justify-center my-2 sm:my-3">
+                        {currentTime < 65 ? (
+                          /* SCENE 1: The Problem (45 Students, 1 Teacher) */
+                          <div className="w-full max-w-lg text-center space-y-2.5 animate-fade-in">
+                            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-300 bg-rose-500/20 px-2.5 py-0.5 rounded-full border border-rose-400/30">
+                              ⚠️ 18 / 45 Students Falling Behind Invisibly
+                            </div>
+                            <h4 className="text-base sm:text-lg font-black text-white">
+                              The Overcrowded Classroom Bottleneck
+                            </h4>
+
+                            {/* Animated 45-Desk Matrix Simulation */}
+                            <div className="grid grid-cols-9 gap-1.5 p-3 rounded-xl bg-black/40 border border-white/10 max-w-sm mx-auto">
+                              {Array.from({ length: 45 }).map((_, idx) => {
+                                const isStruggling = idx % 3 === 0;
+                                const isFast = idx % 5 === 0;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`h-4 rounded flex items-center justify-center text-[8px] font-bold transition-transform ${
+                                      isStruggling
+                                        ? "bg-rose-500 text-white animate-pulse"
+                                        : isFast
+                                        ? "bg-emerald-500 text-white"
+                                        : "bg-amber-500 text-white"
+                                    }`}
+                                    title={`Student ${idx + 1}`}
+                                  >
+                                    {isStruggling ? "!" : isFast ? "★" : "·"}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <p className="text-[11px] text-white/80 italic max-w-sm mx-auto bg-black/30 p-2 rounded-lg border border-white/10">
+                              &ldquo;One teacher cannot diagnose 45 different learning speeds in real-time without automated diagnostic telemetry.&rdquo;
+                            </p>
+                          </div>
+                        ) : currentTime < 130 ? (
+                          /* SCENE 2: AI Solution (Learning DNA & Offline PWA) */
+                          <div className="w-full max-w-lg text-center space-y-2.5 animate-fade-in">
+                            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-300 bg-sky-500/20 px-2.5 py-0.5 rounded-full border border-sky-400/30">
+                              ⚡ 2-Minute Micro-Assessment Engine (Offline-First)
+                            </div>
+                            <h4 className="text-base sm:text-lg font-black text-white">
+                              Generating Real-Time Learning DNA
+                            </h4>
+
+                            {/* Simulated Assessment & DNA Bars */}
+                            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-left space-y-2 text-xs max-w-sm mx-auto">
+                              <div className="flex justify-between items-center text-[10px] text-slate-300">
+                                <span>Quiz: &quot;arr = [10, 20, 30]; arr[1]=?&quot;</span>
+                                <span className="text-emerald-400 font-bold">✓ 20 (KC-002)</span>
+                              </div>
+                              <div className="space-y-1 text-[10px]">
+                                <div className="flex justify-between">
+                                  <span>KC-001 (Array Declaration)</span>
+                                  <span className="text-emerald-400 font-bold">94%</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                  <div className="w-[94%] h-full bg-emerald-400 rounded-full" />
+                                </div>
+                              </div>
+                              <div className="space-y-1 text-[10px]">
+                                <div className="flex justify-between">
+                                  <span>KC-002 (Zero-Indexed Bounds)</span>
+                                  <span className="text-rose-400 font-bold">45% (Needs Focus)</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                  <div className="w-[45%] h-full bg-rose-400 rounded-full" />
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="text-[11px] text-white/80 italic max-w-sm mx-auto bg-black/30 p-2 rounded-lg border border-white/10">
+                              &ldquo;Constructs a multi-dimensional cognitive DNA profile with zero server latency even without school internet.&rdquo;
+                            </p>
+                          </div>
+                        ) : (
+                          /* SCENE 3: Intervention (Radar & Peer Pods) */
+                          <div className="w-full max-w-lg text-center space-y-2.5 animate-fade-in">
+                            <div className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-300 bg-violet-500/20 px-2.5 py-0.5 rounded-full border border-violet-400/30">
+                              🎯 Teacher Radar & Automated Peer Pods
+                            </div>
+                            <h4 className="text-base sm:text-lg font-black text-white">
+                              Closing the Gap Before the Bell Rings
+                            </h4>
+
+                            {/* Simulated Peer Pod & Radar Card */}
+                            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-left space-y-2 text-xs max-w-sm mx-auto">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-sky-200">Pod #02 Formed:</span>
+                                <span className="text-[10px] bg-emerald-400/20 text-emerald-300 px-2 py-0.5 rounded font-bold">
+                                  92% Recovery Rate
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-xs bg-white/10 p-2 rounded-lg">
+                                <div>
+                                  <p className="font-bold text-white">Aarav Patel (Mentor)</p>
+                                  <p className="text-[10px] text-emerald-300">Mastery: 94%</p>
+                                </div>
+                                <span className="text-base">🤝</span>
+                                <div>
+                                  <p className="font-bold text-white">Rohan Gupta (Mentee)</p>
+                                  <p className="text-[10px] text-rose-300">Mastery: 44%</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="text-[11px] text-white/80 italic max-w-sm mx-auto bg-black/30 p-2 rounded-lg border border-white/10">
+                              &ldquo;Teachers get instant radar alerts while high-achievers tutor struggling classmates in balanced peer pods.&rdquo;
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bottom Controls & Timeline Bar */}
+                    <div className="relative z-10 space-y-2 bg-black/50 backdrop-blur-md p-2.5 rounded-xl border border-white/15">
+                      {/* Clickable Scrubber Slider */}
+                      <div className="relative flex items-center">
+                        <input
+                          type="range"
+                          min="0"
+                          max="180"
+                          value={currentTime}
+                          onChange={(e) => {
+                            setCurrentTime(Number(e.target.value));
+                          }}
+                          className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-sky-400 hover:accent-sky-300"
+                        />
+                      </div>
+
+                      {/* Control Buttons & Timestamp Row */}
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setIsPlaying(!isPlaying)}
+                            className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+                            aria-label={isPlaying ? "Pause video" : "Play video"}
+                          >
+                            <Icon name={isPlaying ? "close" : "play"} className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setCurrentTime(Math.max(0, currentTime - 10))}
+                            className="text-[11px] text-white/80 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors"
+                            title="Rewind 10 seconds"
+                          >
+                            -10s
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setCurrentTime(Math.min(180, currentTime + 10))}
+                            className="text-[11px] text-white/80 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors"
+                            title="Forward 10 seconds"
+                          >
+                            +10s
+                          </button>
+
+                          <span className="font-mono text-[11px] text-white/90">
+                            {formatDuration(currentTime)} / 03:00
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const speeds = [1, 1.5, 2];
+                              const nextIdx = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
+                              setPlaybackSpeed(speeds[nextIdx]);
+                            }}
+                            className="text-[10px] font-mono font-bold bg-white/15 px-2 py-0.5 rounded hover:bg-white/25 transition-colors"
+                          >
+                            {playbackSpeed}x
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCurrentTime(0);
+                              setIsPlaying(true);
+                            }}
+                            className="text-[11px] text-white/70 hover:text-white flex items-center gap-1"
+                            title="Restart Walkthrough"
+                          >
+                            <Icon name="refresh" className="w-3 h-3" />
+                            <span className="hidden sm:inline">Restart</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3 Clickable Chapter Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => jumpToChapter(0)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      currentTime < 65
+                        ? "bg-sky-50/80 border-sky-300 ring-2 ring-sky-200/80 shadow-sm"
+                        : "bg-slate-50 border-slate-200 hover:border-sky-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-extrabold text-sky-600 uppercase">
+                        00:00 · The Problem
+                      </p>
+                      {currentTime < 65 && isPlaying && (
+                        <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-1.5 py-0.2 rounded">
+                          Playing ▶
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold text-slate-800 mt-1">45 Students, 1 Teacher</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Overcrowded classrooms and silent disengagement.
                     </p>
-                  </div>
-                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] text-white/70">
-                    <span className="font-mono">01:42 / 03:00</span>
-                    <span className="bg-white/15 px-2 py-0.5 rounded text-[10px] font-semibold">1080p HD</span>
-                  </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => jumpToChapter(65)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      currentTime >= 65 && currentTime < 130
+                        ? "bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-200/80 shadow-sm"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-extrabold text-emerald-600 uppercase">
+                        01:05 · AI Solution
+                      </p>
+                      {currentTime >= 65 && currentTime < 130 && isPlaying && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                          Playing ▶
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold text-slate-800 mt-1">
+                      Learning DNA & Offline PWA
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Knowledge component graphs and zero-latency caching.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => jumpToChapter(130)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      currentTime >= 130
+                        ? "bg-violet-50/80 border-violet-300 ring-2 ring-violet-200/80 shadow-sm"
+                        : "bg-slate-50 border-slate-200 hover:border-violet-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-extrabold text-violet-600 uppercase">
+                        02:10 · Intervention
+                      </p>
+                      {currentTime >= 130 && isPlaying && (
+                        <span className="text-[10px] font-bold text-violet-700 bg-violet-100 px-1.5 py-0.2 rounded">
+                          Playing ▶
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-bold text-slate-800 mt-1">Radar & Peer Pods</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Automated student pairing and instant remediation.
+                    </p>
+                  </button>
                 </div>
 
-                {/* 3 Quick Chapters */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <p className="text-[11px] font-bold text-sky-600 uppercase">00:00 · The Problem</p>
-                    <p className="text-xs font-semibold text-slate-800 mt-1">45 Students, 1 Teacher</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Overcrowded classrooms and silent disengagement.</p>
+                {/* Option to load external YouTube / MP4 video */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <button
+                      type="button"
+                      onClick={() => setShowUrlInput(!showUrlInput)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 underline transition-colors"
+                    >
+                      {showUrlInput ? "Hide custom video link" : "Have an external YouTube/MP4 link? Click here"}
+                    </button>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <p className="text-[11px] font-bold text-emerald-600 uppercase">01:05 · AI Solution</p>
-                    <p className="text-xs font-semibold text-slate-800 mt-1">Learning DNA & Offline PWA</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Knowledge component graphs and zero-latency caching.</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <p className="text-[11px] font-bold text-violet-600 uppercase">02:10 · Intervention</p>
-                    <p className="text-xs font-semibold text-slate-800 mt-1">Radar & Peer Pods</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Automated student pairing and instant remediation.</p>
-                  </div>
+
+                  {showUrlInput && (
+                    <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 flex gap-2">
+                      <input
+                        type="url"
+                        value={customVideoUrl}
+                        onChange={(e) => setCustomVideoUrl(e.target.value)}
+                        placeholder="Paste YouTube or video URL (e.g. https://youtu.be/xxx)..."
+                        className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+                      />
+                      {customVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomVideoUrl("")}
+                          className="text-xs text-slate-500 hover:text-slate-800 font-bold px-2"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <p className="text-xs text-slate-500">Want to interact with real data instead?</p>
+              {/* Modal Footer */}
+              <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                <p className="text-xs text-slate-500">
+                  Prefer to try the actual app with real classroom data?
+                </p>
                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                   <button
                     type="button"
-                    onClick={() => setShowDemoModal(false)}
+                    onClick={() => {
+                      setShowDemoModal(false);
+                      setIsPlaying(false);
+                    }}
                     className="flex-1 sm:flex-none px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
                   >
                     Close
