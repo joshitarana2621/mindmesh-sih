@@ -26,14 +26,14 @@ const app: express.Express = express();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: (origin, callback) => callback(null, true),
     credentials: true,
   },
 });
 
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({
-  origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+  origin: (origin, callback) => callback(null, true),
   credentials: true,
 }));
 app.use(compression());

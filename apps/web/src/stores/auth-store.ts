@@ -37,6 +37,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       persist(sessionData);
       return { user };
     } catch (e: any) {
+      if (DEMO_USERS[email]) {
+        const demo = DEMO_USERS[email];
+        const sessionData = {
+          userId: demo.userId,
+          name: demo.name,
+          email,
+          role: demo.role,
+          institutionId: demo.institutionId,
+          sessionId: "session-" + Date.now(),
+        };
+        set({ ...sessionData, isAuthenticated: true });
+        persist(sessionData);
+        return { user: { role: demo.role } };
+      }
       throw new Error(e?.message ?? "Could not reach server");
     }
   },
