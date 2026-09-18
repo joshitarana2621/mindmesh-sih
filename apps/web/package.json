@@ -32,5 +32,9 @@
     "typescript": "^5.8.0",
     "@tailwindcss/postcss": "^4.0.0",
     "postcss": "^8.5.0"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "^1.29.0",
+    "lightningcss-linux-x64-musl": "^1.29.0"
   }
 }
