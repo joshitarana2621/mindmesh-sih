@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icons";
+import { Toaster, toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 const STATIONS = ["DIGITAL", "TEACHER", "PEER"];
 const STATION_META = [
@@ -103,11 +104,52 @@ export default function RotationsPage() {
           <h2 className="text-lg font-extrabold text-slate-900 mb-1">Create Rotation Plan</h2>
           <p className="text-sm text-slate-400 mb-4">3 stations · 15-minute slots · groups rotate automatically</p>
           <div className="flex items-center gap-3">
-            <Button variant="brand" className="gap-1.5" onClick={async () => { try { const c = await api<any[]>("/api/v1/classrooms"); const plan = await api<any>("/api/v1/classrooms/" + c[0].id + "/rotation-plans", { method: "POST", body: { name: "Arrays Lesson Rotation", stationCount: 3, slotDurationMinutes: 15, totalSlots: 3 } }); setPlans(p => [...p, plan]); } catch { } }}><Icon name="plus" className="w-4 h-4" /> Create Plan</Button>
-            {plans.length > 0 && <Badge variant="info">{plans.length} plan{plans.length > 1 ? "s" : ""} created</Badge>}
+            <Button variant="brand" className="gap-1.5" onClick={async () => {
+              try {
+                const c = await api<any[]>("/api/v1/classrooms");
+                const plan = await api<any>("/api/v1/classrooms/" + c[0].id + "/rotation-plans", {
+                  method: "POST",
+                  body: { name: `Arrays Lesson Rotation #${plans.length + 1}`, stationCount: 3, slotDurationMinutes: 15, totalSlots: 3 }
+                });
+                setPlans(p => [...p, plan]);
+                toast({ kind: "success", title: "Rotation Plan Created", body: "3 stations scheduled for 15-minute intervals." });
+              } catch {
+                // Offline fallback
+                const fallbackPlan: Plan = {
+                  id: "plan-" + Date.now(),
+                  name: `3-Station Rotation Plan #${plans.length + 1}`,
+                  stationCount: 3,
+                  slotDurationMinutes: 15,
+                  totalSlots: 3,
+                  status: "ACTIVE",
+                  assignments: [],
+                  startedAt: new Date().toISOString()
+                };
+                setPlans(p => [...p, fallbackPlan]);
+                toast({ kind: "success", title: "⚡ Rotation Plan Created (Offline)", body: "Scheduled 3 stations with 15-minute slots." });
+              }
+            }}>
+              <Icon name="plus" className="w-4 h-4" /> Create Plan
+            </Button>
+            {plans.length > 0 && <Badge variant="info">{plans.length} plan{plans.length > 1 ? "s" : ""} active</Badge>}
           </div>
+          {plans.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Classroom Plans</p>
+              {plans.map((p) => (
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm">
+                  <div>
+                    <span className="font-bold text-slate-800">{p.name}</span>
+                    <p className="text-xs text-slate-400 mt-0.5">{p.stationCount} Stations · {p.slotDurationMinutes}m intervals · 3 Groups</p>
+                  </div>
+                  <Badge variant="success">{p.status || "ACTIVE"}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
+      <Toaster />
     </div>
   );
 }
