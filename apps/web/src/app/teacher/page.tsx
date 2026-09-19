@@ -13,6 +13,7 @@ import { InitialAvatar } from "@/components/ui/progress";
 import { Icon } from "@/components/ui/icons";
 import { StatCard } from "@/components/ui/stat-card";
 import { Toaster, toast } from "@/components/ui/toast";
+import { DemoBadge } from "@/components/ui/demo-badge";
 import { cn } from "@/lib/utils";
 interface Intervention { id: string; studentName: string; priority: string; triggerFamily: string; knowledgeComponentName?: string; knowledgeComponentCode?: string; status: string; evidence: any; recommendedActionText?: string; createdAt: string; eventCount: number; classroomId: string; }
 export default function TeacherDashboard() {
@@ -122,6 +123,7 @@ export default function TeacherDashboard() {
             <div><h1 className="text-lg font-extrabold text-slate-900">Intervention Radar</h1><p className="text-xs text-slate-400 font-medium">Welcome, {auth.name || "Teacher"}</p></div>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/teacher/heatmap" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-violet-300 hover:text-violet-600 transition-colors shadow-sm"><Icon name="radar" className="w-4 h-4" /> Heatmap</Link>
             <Link href="/teacher/peers" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-violet-300 hover:text-violet-600 transition-colors shadow-sm"><Icon name="users" className="w-4 h-4" /> Peer Pods</Link>
             <Link href="/teacher/rotations" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-violet-300 hover:text-violet-600 transition-colors shadow-sm"><Icon name="refresh" className="w-4 h-4" /> Rotations</Link>
             <Button size="sm" variant="ghost" onClick={() => { auth.logout(); window.location.href = "/login"; }} className="gap-1.5"><Icon name="logout" className="w-3.5 h-3.5" /> Sign out</Button>
@@ -129,6 +131,9 @@ export default function TeacherDashboard() {
         </div>
       </header>
       <main className="max-w-6xl mx-auto p-4 space-y-6">
+        <div className="flex items-center justify-between">
+          <DemoBadge showReset />
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-up">
           <StatCard icon="bell" label="Total Alerts" value={interventions.length} accent="violet" />
           <StatCard icon="alert" label="Open" value={openCount} accent="rose" />

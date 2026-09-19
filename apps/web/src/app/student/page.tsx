@@ -1,11 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
 import { useKioskStore } from "@/stores/kiosk-store";
 import { useSync } from "@/hooks/use-sync";
 import { useConnectivityStore } from "@/stores/connectivity-store";
+import { useMockDataStore } from "@/stores/mock-data-store";
+import { KNOWLEDGE_COMPONENTS } from "@/data/mockKCs";
+import { DemoBadge } from "@/components/ui/demo-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icons";
@@ -13,44 +16,67 @@ import { InitialAvatar, ProgressBar } from "@/components/ui/progress";
 import { StatCard } from "@/components/ui/stat-card";
 import { OfflineSyncCard } from "@/components/offline/offline-sync-card";
 
-const TOPICS = [
-  { t: "Array declaration", m: 0.9, code: "KC-001" },
-  { t: "Array indexing", m: 0.45, code: "KC-002" },
-  { t: "Array traversal", m: 0.65, code: "KC-003" },
-  { t: "Array insertion", m: 0.85, code: "KC-004" },
-];
-
 export default function StudentDashboard() {
   const auth = useAuthStore();
   const kiosk = useKioskStore();
-  const name = kiosk.currentProfile?.name || auth.name || "Aarav Patel";
   useSync();
   const conn = useConnectivityStore((s) => s.state);
-  const [topics, setTopics] = useState(TOPICS);
+  const queue = useConnectivityStore((s) => s.syncQueueCount);
+
+  const mockStudents = useMockDataStore((s) => s.students);
+  const selectedStudentId = useMockDataStore((s) => s.selectedStudentId);
+  const selectStudent = useMockDataStore((s) => s.selectStudent);
+  const hydrate = useMockDataStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  const activeMockStudent =
+    mockStudents.find((s) => s.id === selectedStudentId) || mockStudents[0];
+  const name = kiosk.currentProfile?.name || auth.name || activeMockStudent.name;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [showExplainAI, setShowExplainAI] = useState(false);
 
-  useEffect(() => {
-    const fetchMastery = async () => {
-      try {
-        const res = await api<any[]>("/api/v1/students/me/mastery");
-        if (res && res.length > 0) {
-          setTopics(res.map((m) => ({ t: m.kcName, m: m.mastery, code: m.kcCode })));
-        }
-      } catch (err) {
-        console.error("Using offline mock topics", err);
-      }
-    };
-    fetchMastery();
-  }, []);
+  // Derive topics from the active selected student's knowledge components
+  const topics = useMemo(() => {
+    return Object.entries(activeMockStudent.knowledgeComponents).map(([code, mastery]) => {
+      const def = KNOWLEDGE_COMPONENTS[code];
+      return {
+        code,
+        t: def?.title || code,
+        m: mastery,
+        domain: def?.domain || "General",
+        description: def?.description || "",
+      };
+    });
+  }, [activeMockStudent]);
 
   const filteredTopics = topics.filter(
     (t) =>
       t.t.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const queue = useConnectivityStore((s) => s.syncQueueCount);
-  const next = topics.reduce((a, b) => (a.m < b.m ? a : b));
+
+  const masteredCount = topics.filter((t) => t.m >= 0.8).length;
+  const practiceCount = topics.filter((t) => t.m >= 0.5 && t.m < 0.8).length;
+  const supportCount = topics.filter((t) => t.m < 0.5).length;
+
+  const next =
+    topics.length > 0
+      ? [...topics].sort((a, b) => a.m - b.m)[0]
+      : { t: "Array indexing", m: 0.45, code: "KC-002" };
+
+  const topStrengths = useMemo(() => {
+    return [...topics].sort((a, b) => b.m - a.m).slice(0, 2);
+  }, [topics]);
+
+  const topWeaknesses = useMemo(() => {
+    return [...topics].sort((a, b) => a.m - b.m).slice(0, 2);
+  }, [topics]);
+
+  const activeIntervention = activeMockStudent.interventions[0];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -59,8 +85,38 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-3">
             <InitialAvatar name={name} className="w-10 h-10" />
             <div>
-              <h1 className="text-lg font-extrabold text-slate-900">Hi, {name} 👋</h1>
-              <p className="text-xs text-slate-400 font-medium">Learn · Assess · Improve</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-extrabold text-slate-900">Hi, {name} 👋</h1>
+                <Badge
+                  variant={
+                    activeMockStudent.status === "GREEN"
+                      ? "success"
+                      : activeMockStudent.status === "YELLOW"
+                      ? "warning"
+                      : "destructive"
+                  }
+                  className="text-[10px]"
+                >
+                  {activeMockStudent.overallMastery}% Mastery
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <label htmlFor="student-picker" className="text-[11px] text-slate-400 font-semibold">
+                  Simulated Student:
+                </label>
+                <select
+                  id="student-picker"
+                  value={activeMockStudent.id}
+                  onChange={(e) => selectStudent(e.target.value)}
+                  className="text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-md px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                >
+                  {mockStudents.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.name} ({st.overallMastery}% · {st.status})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -103,11 +159,19 @@ export default function StudentDashboard() {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 space-y-6">
+        {/* Simulation Notice Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <DemoBadge showReset />
+          <span className="text-xs text-slate-400 font-medium">
+            Student ID: <code className="font-mono font-bold text-slate-600">{activeMockStudent.id}</code> · Seat: <span className="font-semibold text-slate-600">{activeMockStudent.seat}</span> · Group: <span className="font-semibold text-slate-600">{activeMockStudent.status}</span>
+          </span>
+        </div>
+
         {/* Top Stat Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 animate-fade-up">
-          <StatCard icon="check" label="Topics Mastered" value={3} accent="emerald" sub="≥ 80% mastery" />
-          <StatCard icon="clock" label="Need Practice" value={2} accent="amber" sub="50–80% mastery" />
-          <StatCard icon="alert" label="Need Support" value={1} accent="rose" sub="< 50% mastery" />
+          <StatCard icon="check" label="Topics Mastered" value={masteredCount} accent="emerald" sub="≥ 80% mastery" />
+          <StatCard icon="clock" label="Need Practice" value={practiceCount} accent="amber" sub="50–80% mastery" />
+          <StatCard icon="alert" label="Need Support" value={supportCount} accent="rose" sub="< 50% mastery" />
         </div>
 
         {/* Adaptive Learning Path Banner */}
@@ -155,7 +219,9 @@ export default function StudentDashboard() {
             {/* Overall Confidence Badge */}
             <div className="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-1.5 shadow-sm self-start sm:self-auto">
               <span className="text-xs font-semibold text-slate-500">Confidence Level:</span>
-              <span className="text-sm font-extrabold text-emerald-600">84%</span>
+              <span className="text-sm font-extrabold text-emerald-600">
+                {activeMockStudent.learningDNA.confidence}%
+              </span>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </div>
@@ -175,37 +241,33 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="space-y-3.5">
-                  {/* Skill 1 */}
-                  <div>
-                    <div className="flex justify-between items-center text-xs mb-1">
-                      <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Array Declaration & Memory Layout
-                      </span>
-                      <span className="font-bold text-emerald-600">92%</span>
+                  {topStrengths.map((str) => (
+                    <div key={str.code}>
+                      <div className="flex justify-between items-center text-xs mb-1">
+                        <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {str.t}
+                        </span>
+                        <span className="font-bold text-emerald-600">
+                          {Math.round(str.m * 100)}%
+                        </span>
+                      </div>
+                      <ProgressBar value={str.m} barClassName="bg-emerald-500" />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        {str.code} · Prerequisite verified · Strong retention
+                      </p>
                     </div>
-                    <ProgressBar value={0.92} barClassName="bg-emerald-500" />
-                    <p className="text-[11px] text-slate-400 mt-1">KC-001 · 4/4 clean attempts · 0.8s avg latency</p>
-                  </div>
-
-                  {/* Skill 2 */}
-                  <div>
-                    <div className="flex justify-between items-center text-xs mb-1">
-                      <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Rightward Element Shifting
-                      </span>
-                      <span className="font-bold text-emerald-600">85%</span>
-                    </div>
-                    <ProgressBar value={0.85} barClassName="bg-emerald-500" />
-                    <p className="text-[11px] text-slate-400 mt-1">KC-004 · Strong prerequisite logic retention</p>
-                  </div>
+                  ))}
                 </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                <span>Retention Index: <strong className="text-slate-700">94%</strong></span>
-                <span className="text-emerald-600 font-bold">● Ready for Peer Tutoring</span>
+                <span>
+                  Retention Index: <strong className="text-slate-700">{activeMockStudent.learningDNA.retentionRate}%</strong>
+                </span>
+                <span className="text-emerald-600 font-bold">
+                  {activeMockStudent.overallMastery >= 80 ? "● Ready for Peer Tutoring" : "● Progressing Steadily"}
+                </span>
               </div>
             </div>
 
@@ -223,36 +285,65 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="space-y-3.5">
-                  {/* Weak Skill 1 */}
-                  <div>
-                    <div className="flex justify-between items-center text-xs mb-1">
-                      <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        Zero-Indexed Offsets & Bounds
-                      </span>
-                      <span className="font-bold text-rose-600">45%</span>
-                    </div>
-                    <ProgressBar value={0.45} barClassName="bg-rose-500" />
-                    <p className="text-[11px] text-rose-500 font-medium mt-1">KC-002 · 3 consecutive off-by-one errors</p>
-                  </div>
-
-                  {/* Weak Skill 2 */}
-                  <div>
-                    <div className="flex justify-between items-center text-xs mb-1">
-                      <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        Loop Termination Conditions
-                      </span>
-                      <span className="font-bold text-amber-600">62%</span>
-                    </div>
-                    <ProgressBar value={0.62} barClassName="bg-amber-500" />
-                    <p className="text-[11px] text-amber-600 font-medium mt-1">KC-003 · Confusing `&lt;` with `&lt;=` in traversal</p>
-                  </div>
+                  {topWeaknesses.map((w) => {
+                    const studentMisc = activeMockStudent.misconceptions.find(
+                      (m) => m.title.toLowerCase().includes(w.t.toLowerCase()) || m.code.includes(w.code)
+                    );
+                    return (
+                      <div key={w.code}>
+                        <div className="flex justify-between items-center text-xs mb-1">
+                          <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                w.m < 0.5 ? "bg-rose-500" : "bg-amber-500"
+                              }`}
+                            />
+                            {w.t}
+                          </span>
+                          <span
+                            className={`font-bold ${
+                              w.m < 0.5 ? "text-rose-600" : "text-amber-600"
+                            }`}
+                          >
+                            {Math.round(w.m * 100)}%
+                          </span>
+                        </div>
+                        <ProgressBar
+                          value={w.m}
+                          barClassName={w.m < 0.5 ? "bg-rose-500" : "bg-amber-500"}
+                        />
+                        <p
+                          className={`text-[11px] font-medium mt-1 ${
+                            w.m < 0.5 ? "text-rose-500" : "text-amber-600"
+                          }`}
+                        >
+                          {w.code} · {studentMisc?.title || "Requires targeted conceptual scaffolding"}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                <span>Cognitive Stall Risk: <strong className="text-amber-600">Moderate</strong></span>
+                <span>
+                  Cognitive Stall Risk:{" "}
+                  <strong
+                    className={
+                      activeMockStudent.riskLevel === "HIGH"
+                        ? "text-rose-600"
+                        : activeMockStudent.riskLevel === "MEDIUM"
+                        ? "text-amber-600"
+                        : "text-emerald-600"
+                    }
+                  >
+                    {activeMockStudent.riskLevel === "HIGH"
+                      ? "Critical"
+                      : activeMockStudent.riskLevel === "MEDIUM"
+                      ? "Moderate"
+                      : "Low"}
+                  </strong>
+                </span>
                 <span className="text-violet-700 font-bold">● Micro-drills recommended</span>
               </div>
             </div>
@@ -269,20 +360,27 @@ export default function StudentDashboard() {
                     </div>
                     <h3 className="font-bold text-slate-900 text-sm">Next Recommended Lesson</h3>
                   </div>
-                  <Badge variant="info">Target KC-002</Badge>
+                  <Badge variant="info">Target {activeIntervention?.kcCode || next.code}</Badge>
                 </div>
 
                 <div className="bg-white rounded-xl border border-sky-100 p-3.5 shadow-sm space-y-2">
                   <h4 className="font-bold text-slate-900 text-sm leading-snug">
-                    Mastering Zero-Index Offsets: Visual Pointer Tracing
+                    {activeIntervention?.title || `Mastering ${next.t}: Interactive Concept Scaffolding`}
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Interactive physical grid simulation mapping array slots 0 to N-1 before testing boundary calculations.
+                    {activeIntervention?.strategy ||
+                      `Targeted reinforcement session for ${next.code} addressing diagnosed misconceptions before evaluating transfer.`}
                   </p>
                   <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-medium">
                     <span className="flex items-center gap-1"><Icon name="clock" className="w-3 h-3" /> ~4 mins</span>
                     <span>·</span>
                     <span>3 micro-problems</span>
+                    {activeIntervention?.peerBuddy && (
+                      <>
+                        <span>·</span>
+                        <span className="text-sky-700 font-semibold">Buddy: {activeIntervention.peerBuddy}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -326,13 +424,15 @@ export default function StudentDashboard() {
                     </div>
                     <div className="space-y-1.5 text-white/90 leading-relaxed text-[11px]">
                       <p>
-                        <strong className="text-white">Why this lesson:</strong> Telemetry detected 3 consecutive boundary miscalculations on question pattern <code className="bg-sky-950 px-1 py-0.5 rounded text-amber-300">arr[size]</code>.
+                        <strong className="text-white">Why this lesson: </strong>
+                        {activeMockStudent.learningDNA.errorPattern}
                       </p>
                       <p>
-                        <strong className="text-white">Scaffolding:</strong> Replaces abstract syntax with a visual pointer trace before testing again to break the misconception loop.
+                        <strong className="text-white">Cognitive Style: </strong>
+                        {activeMockStudent.learningDNA.cognitiveStyle} (Retention Rate: {activeMockStudent.learningDNA.retentionRate}%)
                       </p>
                       <p className="text-emerald-300 font-semibold pt-0.5">
-                        ✓ Expected outcome: +35% mastery on KC-002, unlocking sequential traversal.
+                        ✓ Expected outcome: +30% mastery on {activeIntervention?.kcCode || next.code}, reducing diagnostic risk.
                       </p>
                     </div>
                   </div>
@@ -365,15 +465,18 @@ export default function StudentDashboard() {
           <div className="space-y-3">
             {filteredTopics.map((k, i) => (
               <div
-                key={k.t}
+                key={k.code}
                 className="bg-white rounded-2xl border border-slate-200 p-4 card-hover animate-fade-up"
                 style={{ animationDelay: `${i * 50}ms` }}
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className="flex items-center gap-2.5">
                     <span className="font-semibold text-slate-800 text-sm">{k.t}</span>
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5 font-mono">
                       {k.code}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {k.domain}
                     </span>
                   </span>
                   <span
@@ -384,7 +487,16 @@ export default function StudentDashboard() {
                     {Math.round(k.m * 100)}%
                   </span>
                 </div>
-                <ProgressBar value={k.m} />
+                <ProgressBar
+                  value={k.m}
+                  barClassName={
+                    k.m >= 0.8
+                      ? "bg-emerald-500"
+                      : k.m >= 0.5
+                      ? "bg-amber-500"
+                      : "bg-rose-500"
+                  }
+                />
               </div>
             ))}
           </div>

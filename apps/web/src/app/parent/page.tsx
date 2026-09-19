@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InitialAvatar, ProgressBar } from "@/components/ui/progress";
 import { Toaster, toast } from "@/components/ui/toast";
+import { DemoBadge } from "@/components/ui/demo-badge";
 
 interface ChildProfile {
   id: string;
@@ -497,6 +498,10 @@ export default function ParentDashboard() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="flex items-center justify-between">
+          <DemoBadge showReset />
+        </div>
+
         {/* Child Profile Card & Week Range Ribbon */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
           <div className="flex items-center gap-3.5">

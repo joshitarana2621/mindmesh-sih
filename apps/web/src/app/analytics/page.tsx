@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress";
 import { Toaster, toast } from "@/components/ui/toast";
+import { DemoBadge } from "@/components/ui/demo-badge";
 
 // Data types
 interface TimelinePoint {
@@ -258,6 +259,10 @@ export default function AnalyticsPage() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="flex items-center justify-between">
+          <DemoBadge showReset />
+        </div>
+
         {/* Banner: Executive Proof of Impact */}
         <section aria-labelledby="analytics-hero-heading">
           <div className="bg-brand rounded-2xl p-6 sm:p-8 text-white shadow-xl shadow-slate-900/10 relative overflow-hidden animate-fade-up">

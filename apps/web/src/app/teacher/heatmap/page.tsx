@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InitialAvatar, ProgressBar } from "@/components/ui/progress";
 import { Toaster, toast } from "@/components/ui/toast";
+import { DemoBadge } from "@/components/ui/demo-badge";
+import { useMockDataStore } from "@/stores/mock-data-store";
+import { KNOWLEDGE_COMPONENTS } from "@/data/mockKCs";
+import type { MockStudent } from "@/data/mockStudents";
 
 interface StudentData {
   id: string;
@@ -34,875 +38,63 @@ interface StudentData {
   };
 }
 
-const STUDENTS_40: StudentData[] = [
-  {
-    id: "st-01",
-    name: "Aarav Patel",
-    seat: "Seat 01",
-    score: 92,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 94,
-      cognitiveStyle: "Deductive & High Pacing",
-      errorPattern: "Zero syntax errors; strong memory allocation comprehension.",
-      retentionRate: 96,
-    },
-    weakTopics: [
-      { code: "KC-004", name: "Dynamic Resizing", mastery: 0.82, severity: "MODERATE" },
-    ],
+function toStudentData(st: MockStudent): StudentData {
+  const weakTopics = Object.entries(st.knowledgeComponents)
+    .filter(([_, mastery]) => mastery < 0.72)
+    .sort((a, b) => a[1] - b[1])
+    .map(([kcId, mastery]) => {
+      const kc = KNOWLEDGE_COMPONENTS[kcId];
+      const severity: "CRITICAL" | "HIGH" | "MODERATE" =
+        mastery < 0.45 ? "CRITICAL" : mastery < 0.6 ? "HIGH" : "MODERATE";
+      return {
+        code: kcId,
+        name: kc?.title || kcId,
+        mastery,
+        severity,
+      };
+    });
+
+  const activeIntervention = st.interventions?.[0];
+  const peerBuddy =
+    activeIntervention?.peerBuddy ||
+    (st.overallMastery >= 80 ? "Rohan Gupta (Mentee)" : "Aarav Patel (Peer Lead)");
+
+  return {
+    id: st.id,
+    name: st.name,
+    seat: st.seat,
+    score: st.overallMastery,
+    status: st.status,
+    learningDNA: st.learningDNA,
+    weakTopics,
     intervention: {
-      strategy: "Peer Mentorship Leadership",
-      action: "Assign Aarav as mentor for KC-002 peer pods with struggling students.",
-      peerBuddy: "Rohan Gupta (Mentee)",
-      drill: "Advanced 2D memory layouts challenge",
-    },
-  },
-  {
-    id: "st-02",
-    name: "Diya Sharma",
-    seat: "Seat 02",
-    score: 68,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 65,
-      cognitiveStyle: "Visual & Step-by-Step",
-      errorPattern: "Occasionally confuses array length with last valid index.",
-      retentionRate: 72,
-    },
-    weakTopics: [
-      { code: "KC-002", name: "Zero-Indexed Bounds", mastery: 0.58, severity: "MODERATE" },
-      { code: "KC-003", name: "Loop Traversal Conditions", mastery: 0.64, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Guided Visual Boundary Check",
-      action: "Review index range [0, N-1] using a graphic memory strip.",
-      peerBuddy: "Meera Nair (Mentor)",
-      drill: "3-Question Offset Practice",
-    },
-  },
-  {
-    id: "st-03",
-    name: "Rohan Gupta",
-    seat: "Seat 03",
-    score: 44,
-    status: "RED",
-    learningDNA: {
-      confidence: 38,
-      cognitiveStyle: "Experimental / Trial-and-Error",
-      errorPattern: "Consistently accesses arr[N] instead of arr[N-1] causing out-of-bounds.",
-      retentionRate: 48,
-    },
-    weakTopics: [
-      { code: "KC-002", name: "Array Indexing & Boundaries", mastery: 0.35, severity: "CRITICAL" },
-      { code: "KC-003", name: "Loop Termination Operators", mastery: 0.42, severity: "HIGH" },
-    ],
-    intervention: {
-      strategy: "Immediate 1-on-1 Whiteboard Trace",
-      action: "Conduct a 2-minute physical pointer trace from index 0 to 4 before next quiz.",
-      peerBuddy: "Aarav Patel (Mentor)",
-      drill: "Boundary Misconception Micro-drill (3 mins)",
-    },
-  },
-  {
-    id: "st-04",
-    name: "Ananya Rao",
-    seat: "Seat 04",
-    score: 41,
-    status: "RED",
-    learningDNA: {
-      confidence: 34,
-      cognitiveStyle: "Analytical but Low Processing Speed",
-      errorPattern: "Off-by-one loops; repeatedly uses '<=' instead of '<' in termination.",
-      retentionRate: 44,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Array Traversal & Conditions", mastery: 0.32, severity: "CRITICAL" },
-      { code: "KC-002", name: "Zero-Indexed Offsets", mastery: 0.44, severity: "HIGH" },
-    ],
-    intervention: {
-      strategy: "Targeted Scaffolded Remediation",
-      action: "Assign tabular code-tracing exercise with color-coded index counters.",
-      peerBuddy: "Arjun Verma (Mentor)",
-      drill: "Loop condition visualizer module",
-    },
-  },
-  {
-    id: "st-05",
-    name: "Kabir Singh",
-    seat: "Seat 05",
-    score: 72,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 70,
-      cognitiveStyle: "Kinesthetic / Code-First",
-      errorPattern: "Understands loops but makes erratic boundary syntax typos under time limits.",
-      retentionRate: 75,
-    },
-    weakTopics: [
-      { code: "KC-004", name: "Element Insertion & Shifting", mastery: 0.60, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Low-Stakes Untimed Practice",
-      action: "Provide untimed micro-scaffold for shifting elements rightwards.",
-      peerBuddy: "Sara Khan (Mentor)",
-      drill: "In-place array shifting puzzle",
-    },
-  },
-  {
-    id: "st-06",
-    name: "Meera Nair",
-    seat: "Seat 06",
-    score: 88,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 89,
-      cognitiveStyle: "Structural & Methodical",
-      errorPattern: "Rare errors; occasional delay on nested traversal logic.",
-      retentionRate: 92,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Nested Traversal", mastery: 0.78, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Peer Pod Mentor Assignment",
-      action: "Assign Meera to lead Pod KC-003 with Diya Sharma.",
-      peerBuddy: "Diya Sharma (Mentee)",
-      drill: "Matrix traversal extension question",
-    },
-  },
-  {
-    id: "st-07",
-    name: "Arjun Verma",
-    seat: "Seat 07",
-    score: 94,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 96,
-      cognitiveStyle: "Abstract Reasoning",
-      errorPattern: "Flawless on basic structures; fast completion speed.",
-      retentionRate: 97,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Advanced Algorithmic Extension",
-      action: "Unlock binary search and two-pointer challenge problem set.",
-      peerBuddy: "Ananya Rao (Mentee)",
-      drill: "Two-pointer array reversal drill",
-    },
-  },
-  {
-    id: "st-08",
-    name: "Ishaan Joshi",
-    seat: "Seat 08",
-    score: 46,
-    status: "RED",
-    learningDNA: {
-      confidence: 40,
-      cognitiveStyle: "Verbal / Needs Concrete Analogy",
-      errorPattern: "Struggles with memory abstraction; thinks index starts from 1.",
-      retentionRate: 46,
-    },
-    weakTopics: [
-      { code: "KC-001", name: "Array Declaration & Base Memory", mastery: 0.42, severity: "CRITICAL" },
-      { code: "KC-002", name: "Array Indexing", mastery: 0.45, severity: "HIGH" },
-    ],
-    intervention: {
-      strategy: "Physical Metaphor Intervention",
-      action: "Show apartment mailbox analogy (Box #0 is ground floor).",
-      peerBuddy: "Kavya Pillai (Mentor)",
-      drill: "Mailbox index mapping quiz",
-    },
-  },
-  {
-    id: "st-09",
-    name: "Tanya Reddy",
-    seat: "Seat 09",
-    score: 65,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 62,
-      cognitiveStyle: "Sequential Learner",
-      errorPattern: "Drops accuracy when loops iterate backwards.",
-      retentionRate: 68,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Reverse Traversal Loops", mastery: 0.52, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Reverse Pointer Walkthrough",
-      action: "Trace loop `for (let i = arr.length - 1; i >= 0; i--)` line-by-line.",
-      peerBuddy: "Yash Choudhury (Mentor)",
-      drill: "Reverse indexing micro-quiz",
-    },
-  },
-  {
-    id: "st-10",
-    name: "Aditya Kumar",
-    seat: "Seat 10",
-    score: 85,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 86,
-      cognitiveStyle: "Iterative & Persistent",
-      errorPattern: "Consistent grasp of core primitives.",
-      retentionRate: 90,
-    },
-    weakTopics: [
-      { code: "KC-004", name: "Array Insertion Bounds", mastery: 0.76, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Reinforcement Practice",
-      action: "Practice shift-right array insertion without overwriting.",
-      peerBuddy: "Self-Paced Extension",
-      drill: "Insertion challenge 2",
-    },
-  },
-  {
-    id: "st-11",
-    name: "Riya Sen",
-    seat: "Seat 11",
-    score: 74,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 71,
-      cognitiveStyle: "Visual Learner",
-      errorPattern: "Solid on declarations; hesitant on loop boundary conditions.",
-      retentionRate: 74,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Boundary Edge Cases", mastery: 0.63, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Boundary Highlight Drill",
-      action: "Highlight array ends visually on canvas before writing condition.",
-      peerBuddy: "Aman Tripathi",
-      drill: "Edge case diagnostic check",
-    },
-  },
-  {
-    id: "st-12",
-    name: "Vihaan Malhotra",
-    seat: "Seat 12",
-    score: 89,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 90,
-      cognitiveStyle: "Fast Analytic",
-      errorPattern: "Strong syntax control; high first-attempt accuracy.",
-      retentionRate: 93,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Pod Mentor",
-      action: "Support Devansh Das on fundamental array bounds.",
-      peerBuddy: "Devansh Das (Mentee)",
-      drill: "Advanced memory allocation test",
-    },
-  },
-  {
-    id: "st-13",
-    name: "Sara Khan",
-    seat: "Seat 13",
-    score: 91,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 93,
-      cognitiveStyle: "Systematic & Thorough",
-      errorPattern: "Near-zero mistakes; explains solutions clearly.",
-      retentionRate: 95,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Co-Teacher Role in Pods",
-      action: "Lead station 3 collaborative review for KC-003.",
-      peerBuddy: "Kabir Singh (Mentee)",
-      drill: "Algorithmic thinking card",
-    },
-  },
-  {
-    id: "st-14",
-    name: "Devansh Das",
-    seat: "Seat 14",
-    score: 38,
-    status: "RED",
-    learningDNA: {
-      confidence: 30,
-      cognitiveStyle: "Struggling with Mental Models",
-      errorPattern: "High latency (>45s per item); randomly guessing on array boundaries.",
-      retentionRate: 35,
-    },
-    weakTopics: [
-      { code: "KC-001", name: "Array Definition & Size", mastery: 0.32, severity: "CRITICAL" },
-      { code: "KC-002", name: "0-Indexed Offsets", mastery: 0.35, severity: "CRITICAL" },
-      { code: "KC-003", name: "Traversal Loops", mastery: 0.40, severity: "HIGH" },
-    ],
-    intervention: {
-      strategy: "Urgent Teacher Station Direct Instruction",
-      action: "Pull Devansh to Teacher Station for tactile 1-on-1 foundational reteaching.",
-      peerBuddy: "Vihaan Malhotra (Mentor)",
-      drill: "Tactile card sorting drill (5 mins)",
-    },
-  },
-  {
-    id: "st-15",
-    name: "Pooja Iyer",
-    seat: "Seat 15",
-    score: 69,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 68,
-      cognitiveStyle: "Reflective",
-      errorPattern: "Understands theory but misses edge cases (empty arrays, 1-element arrays).",
-      retentionRate: 70,
-    },
-    weakTopics: [
-      { code: "KC-002", name: "Empty / Single-Item Arrays", mastery: 0.55, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Edge Case Diagnostic",
-      action: "Assign boundary edge case checks for single-item arrays.",
-      peerBuddy: "Siddharth Roy",
-      drill: "Edge case practice 1",
-    },
-  },
-  {
-    id: "st-16",
-    name: "Siddharth Roy",
-    seat: "Seat 16",
-    score: 84,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 85,
-      cognitiveStyle: "Practical & Applied",
-      errorPattern: "Good execution; minor slip on 0-based syntax occasionally.",
-      retentionRate: 88,
-    },
-    weakTopics: [
-      { code: "KC-004", name: "Element Shifting", mastery: 0.74, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Self-Check Review",
-      action: "Provide self-correcting unit test for array manipulation.",
-      peerBuddy: "Pooja Iyer",
-      drill: "Self-checking test suite",
-    },
-  },
-  {
-    id: "st-17",
-    name: "Kavya Pillai",
-    seat: "Seat 17",
-    score: 93,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 95,
-      cognitiveStyle: "Top Performer / Conceptual",
-      errorPattern: "High speed, 100% accuracy on foundational indexing.",
-      retentionRate: 98,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Mentorship for Ishaan",
-      action: "Pair with Ishaan Joshi on mailbox memory model.",
-      peerBuddy: "Ishaan Joshi (Mentee)",
-      drill: "Mentor explanation rubric",
-    },
-  },
-  {
-    id: "st-18",
-    name: "Manav Mehta",
-    seat: "Seat 18",
-    score: 61,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 58,
-      cognitiveStyle: "Slightly Hesitant",
-      errorPattern: "Slow response times on loops; double-checks conditions frequently.",
-      retentionRate: 64,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Loop Traversal Pacing", mastery: 0.54, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Confidence Building Micro-Quiz",
-      action: "Assign 3 quick automated recognition tasks to build speed.",
-      peerBuddy: "Aryan Saxena",
-      drill: "Pacing booster quiz",
-    },
-  },
-  {
-    id: "st-19",
-    name: "Shreya Bose",
-    seat: "Seat 19",
-    score: 45,
-    status: "RED",
-    learningDNA: {
-      confidence: 41,
-      cognitiveStyle: "Intuitive Guessing Pattern",
-      errorPattern: "Frequently inverts index and element values (e.g. using value as index).",
-      retentionRate: 47,
-    },
-    weakTopics: [
-      { code: "KC-002", name: "Index vs. Value Distinction", mastery: 0.38, severity: "CRITICAL" },
-      { code: "KC-003", name: "Array Traversal Values", mastery: 0.44, severity: "HIGH" },
-    ],
-    intervention: {
-      strategy: "Index vs Value Scaffolding",
-      action: "Use color-coded table differentiating 'House Number' (index) from 'Resident' (value).",
-      peerBuddy: "Tanvi Pandey (Mentor)",
-      drill: "Index vs Value sorting cards",
-    },
-  },
-  {
-    id: "st-20",
-    name: "Aryan Saxena",
-    seat: "Seat 20",
-    score: 87,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 88,
-      cognitiveStyle: "Consistent & Steady",
-      errorPattern: "Very solid grasp across all 4 KCs.",
-      retentionRate: 91,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Station Group Leader",
-      action: "Lead Group 2 peer station during rotation cycles.",
-      peerBuddy: "Manav Mehta",
-      drill: "Station leadership task",
-    },
-  },
-  {
-    id: "st-21",
-    name: "Neha Bhatia",
-    seat: "Seat 21",
-    score: 77,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 75,
-      cognitiveStyle: "Methodical",
-      errorPattern: "Occasionally forgets that array size is fixed in standard declarations.",
-      retentionRate: 78,
-    },
-    weakTopics: [
-      { code: "KC-001", name: "Array Memory Bounds", mastery: 0.68, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Memory Structure Review",
-      action: "Complete 2 quick visual exercises on contiguous memory allocation.",
-      peerBuddy: "Pranav Kulkarni",
-      drill: "Memory strip worksheet",
-    },
-  },
-  {
-    id: "st-22",
-    name: "Pranav Kulkarni",
-    seat: "Seat 22",
-    score: 82,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 83,
-      cognitiveStyle: "Practical Problem Solver",
-      errorPattern: "Reliable mastery; minimal assistance required.",
-      retentionRate: 86,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Algorithmic Expansion",
-      action: "Explore array searching techniques (Linear vs Binary).",
-      peerBuddy: "Neha Bhatia",
-      drill: "Search algorithm drill",
-    },
-  },
-  {
-    id: "st-23",
-    name: "Anika Deshmukh",
-    seat: "Seat 23",
-    score: 66,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 64,
-      cognitiveStyle: "Detail-Oriented but Slow",
-      errorPattern: "Gets confused between forward and backward index offsets.",
-      retentionRate: 67,
-    },
-    weakTopics: [
-      { code: "KC-002", name: "Index Calculations", mastery: 0.59, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Visual Number Line Reinforcement",
-      action: "Use digital number-line tool to practice indexing steps.",
-      peerBuddy: "Kunal Chopra",
-      drill: "Number line offset quiz",
-    },
-  },
-  {
-    id: "st-24",
-    name: "Yash Choudhury",
-    seat: "Seat 24",
-    score: 95,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 98,
-      cognitiveStyle: "Advanced Analytical",
-      errorPattern: "Perfect scores across all recent diagnostic quizzes.",
-      retentionRate: 99,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Pod Lead Mentor",
-      action: "Lead Pod KC-002; mentor Tanya Reddy and Simran Kaur.",
-      peerBuddy: "Simran Kaur (Mentee)",
-      drill: "Competitive programming micro-challenge",
-    },
-  },
-  {
-    id: "st-25",
-    name: "Simran Kaur",
-    seat: "Seat 25",
-    score: 42,
-    status: "RED",
-    learningDNA: {
-      confidence: 35,
-      cognitiveStyle: "Visual Learner with Syntax Anxiety",
-      errorPattern: "Confuses bracket notation `arr[i]` with function call syntax `arr(i)`.",
-      retentionRate: 45,
-    },
-    weakTopics: [
-      { code: "KC-001", name: "Array Syntax & Declaration", mastery: 0.36, severity: "CRITICAL" },
-      { code: "KC-002", name: "Bracket Index Notation", mastery: 0.41, severity: "HIGH" },
-    ],
-    intervention: {
-      strategy: "Syntax Demystification Drill",
-      action: "5-minute syntax contrast card: `arr[i]` vs `fn(x)`.",
-      peerBuddy: "Yash Choudhury (Mentor)",
-      drill: "Bracket syntax matching game",
-    },
-  },
-  {
-    id: "st-26",
-    name: "Hrithik Menon",
-    seat: "Seat 26",
-    score: 71,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 69,
-      cognitiveStyle: "Hands-on Trial",
-      errorPattern: "Good at writing code, but makes arithmetic errors in array sizing.",
-      retentionRate: 72,
-    },
-    weakTopics: [
-      { code: "KC-004", name: "Array Insertion Boundaries", mastery: 0.62, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Boundary Arithmetic Micro-Check",
-      action: "Practice calculating required capacity before insertion.",
-      peerBuddy: "Priya Nambiar",
-      drill: "Capacity calculation sheet",
-    },
-  },
-  {
-    id: "st-27",
-    name: "Priya Nambiar",
-    seat: "Seat 27",
-    score: 86,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 87,
-      cognitiveStyle: "Structured Thinker",
-      errorPattern: "High consistency; dependable understanding of loop flows.",
-      retentionRate: 90,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Co-operative Learning Pod",
-      action: "Guide Hrithik Menon through array resizing logic.",
-      peerBuddy: "Hrithik Menon",
-      drill: "Peer coaching challenge",
-    },
-  },
-  {
-    id: "st-28",
-    name: "Nikhil Agarwal",
-    seat: "Seat 28",
-    score: 64,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 60,
-      cognitiveStyle: "Verbal / Abstract",
-      errorPattern: "Understands concept verbally but misplaces semicolons in loop headers.",
-      retentionRate: 65,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Loop Syntax Precision", mastery: 0.56, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Syntax Block Scaffolding",
-      action: "Use draggable visual code blocks before typing raw syntax.",
-      peerBuddy: "Tanvi Pandey",
-      drill: "Code block reordering task",
-    },
-  },
-  {
-    id: "st-29",
-    name: "Tanvi Pandey",
-    seat: "Seat 29",
-    score: 90,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 92,
-      cognitiveStyle: "Intuitive & Expressive",
-      errorPattern: "Very high concept mastery; excellent communication skills.",
-      retentionRate: 94,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Pod Lead for Shreya",
-      action: "Mentor Shreya Bose on Index vs Value distinction.",
-      peerBuddy: "Shreya Bose (Mentee)",
-      drill: "Pedagogical tutoring review",
-    },
-  },
-  {
-    id: "st-30",
-    name: "Kunal Chopra",
-    seat: "Seat 30",
-    score: 83,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 84,
-      cognitiveStyle: "Practical Builder",
-      errorPattern: "Reliable execution with fast recall.",
-      retentionRate: 87,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Independent Problem Solving",
-      action: "Work on array rotation algorithms.",
-      peerBuddy: "Anika Deshmukh",
-      drill: "Array cyclic shift drill",
-    },
-  },
-  {
-    id: "st-31",
-    name: "Divya Tiwari",
-    seat: "Seat 31",
-    score: 75,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 73,
-      cognitiveStyle: "Methodical & Thoughtful",
-      errorPattern: "Occasionally confuses `<` with `<=` when iterating up to length.",
-      retentionRate: 76,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Termination Operator Accuracy", mastery: 0.65, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Operator Distinction Practice",
-      action: "Complete 5 rapid comparison cards on `<` vs `<= length`.",
-      peerBuddy: "Rahul Singhania",
-      drill: "Operator rapid test",
-    },
-  },
-  {
-    id: "st-32",
-    name: "Rahul Singhania",
-    seat: "Seat 32",
-    score: 89,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 91,
-      cognitiveStyle: "Fast Analytic",
-      errorPattern: "High accuracy; eager to tackle extension puzzles.",
-      retentionRate: 92,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Pod Mentor",
-      action: "Partner with Divya Tiwari on condition verification.",
-      peerBuddy: "Divya Tiwari",
-      drill: "Condition verification drill",
-    },
-  },
-  {
-    id: "st-33",
-    name: "Sneha Mishra",
-    seat: "Seat 33",
-    score: 63,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 59,
-      cognitiveStyle: "Visual & Careful",
-      errorPattern: "Hesitant when indexing array elements from end.",
-      retentionRate: 64,
-    },
-    weakTopics: [
-      { code: "KC-002", name: "Negative / End-Offset Indices", mastery: 0.54, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "End-Offset Stepping Strategy",
-      action: "Trace formula `arr[arr.length - 1 - i]` with diagram.",
-      peerBuddy: "Varun Jain",
-      drill: "End offset calculator check",
-    },
-  },
-  {
-    id: "st-34",
-    name: "Varun Jain",
-    seat: "Seat 34",
-    score: 81,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 82,
-      cognitiveStyle: "Consistent Worker",
-      errorPattern: "Steady performance across standard problems.",
-      retentionRate: 85,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Collaboration",
-      action: "Assist Sneha Mishra with offset formulas.",
-      peerBuddy: "Sneha Mishra",
-      drill: "Formula peer check",
-    },
-  },
-  {
-    id: "st-35",
-    name: "Anjali Yadav",
-    seat: "Seat 35",
-    score: 94,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 96,
-      cognitiveStyle: "High Mastery & Fast Learner",
-      errorPattern: "Flawless on quizzes; helps peers explain code.",
-      retentionRate: 97,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Classroom Assistant Role",
-      action: "Serve as student teaching assistant for Station 3.",
-      peerBuddy: "Aman Tripathi",
-      drill: "Advanced algorithm challenge",
-    },
-  },
-  {
-    id: "st-36",
-    name: "Aman Tripathi",
-    seat: "Seat 36",
-    score: 67,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 65,
-      cognitiveStyle: "Practical Experimenter",
-      errorPattern: "Occasionally forgets to initialize loop counter variable `i`.",
-      retentionRate: 68,
-    },
-    weakTopics: [
-      { code: "KC-003", name: "Loop Variable Initialization", mastery: 0.58, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Header Syntax Checklist",
-      action: "Apply 3-part loop initialization checklist: Init, Condition, Increment.",
-      peerBuddy: "Anjali Yadav",
-      drill: "Loop header checklist quiz",
-    },
-  },
-  {
-    id: "st-37",
-    name: "Kriti Sengupta",
-    seat: "Seat 37",
-    score: 92,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 93,
-      cognitiveStyle: "Analytical & Creative",
-      errorPattern: "Consistently excellent scores; solves problems in multiple ways.",
-      retentionRate: 95,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Pod Mentor",
-      action: "Support Chetan Rawat during rotation station.",
-      peerBuddy: "Chetan Rawat",
-      drill: "Multi-solution comparison drill",
-    },
-  },
-  {
-    id: "st-38",
-    name: "Chetan Rawat",
-    seat: "Seat 38",
-    score: 70,
-    status: "YELLOW",
-    learningDNA: {
-      confidence: 68,
-      cognitiveStyle: "Visual & Step-by-Step",
-      errorPattern: "Understands array traversal but hesitates on edge element handling.",
-      retentionRate: 71,
-    },
-    weakTopics: [
-      { code: "KC-004", name: "Array Edge Insertion", mastery: 0.61, severity: "MODERATE" },
-    ],
-    intervention: {
-      strategy: "Edge Element Hands-On Step",
-      action: "Trace inserting at index 0 vs index N.",
-      peerBuddy: "Kriti Sengupta",
-      drill: "Edge insertion worksheet",
-    },
-  },
-  {
-    id: "st-39",
-    name: "Barkha Bansal",
-    seat: "Seat 39",
-    score: 86,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 87,
-      cognitiveStyle: "Calm & Structured",
-      errorPattern: "Very stable retention; few syntax errors.",
-      retentionRate: 89,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Self-Paced Progress",
-      action: "Advance to multi-dimensional arrays.",
-      peerBuddy: "Mayank Dixit",
-      drill: "2D array intro worksheet",
-    },
-  },
-  {
-    id: "st-40",
-    name: "Mayank Dixit",
-    seat: "Seat 40",
-    score: 88,
-    status: "GREEN",
-    learningDNA: {
-      confidence: 89,
-      cognitiveStyle: "Logical Thinker",
-      errorPattern: "Strong understanding across all fundamentals.",
-      retentionRate: 91,
-    },
-    weakTopics: [],
-    intervention: {
-      strategy: "Peer Collaboration",
-      action: "Co-lead peer practice session on array operations.",
-      peerBuddy: "Barkha Bansal",
-      drill: "Array operations synthesis",
-    },
-  },
-];
+      strategy: activeIntervention?.strategy || (st.status === "GREEN" ? "Peer Mentorship Leadership" : "Targeted Adaptive Drill"),
+      action: activeIntervention?.title || (st.status === "GREEN" ? "Co-lead peer practice session on foundational topics." : "Complete targeted practice questions in Student Portal."),
+      peerBuddy,
+      drill: activeIntervention?.kcCode ? activeIntervention.kcCode + " Synthesis Drill" : "Core Concept Synthesis Drill",
+    },
+  };
+}
 
 export default function TeacherHeatmapPage() {
+  const rawStudents = useMockDataStore((s) => s.students);
+  const hydrate = useMockDataStore((s) => s.hydrate);
+  const completeIntervention = useMockDataStore((s) => s.completeIntervention);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  const students: StudentData[] = useMemo(() => rawStudents.map(toStudentData), [rawStudents]);
   const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(null);
   const [filter, setFilter] = useState<"ALL" | "GREEN" | "YELLOW" | "RED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const greenCount = STUDENTS_40.filter((s) => s.status === "GREEN").length;
-  const yellowCount = STUDENTS_40.filter((s) => s.status === "YELLOW").length;
-  const redCount = STUDENTS_40.filter((s) => s.status === "RED").length;
+  const greenCount = students.filter((s) => s.status === "GREEN").length;
+  const yellowCount = students.filter((s) => s.status === "YELLOW").length;
+  const redCount = students.filter((s) => s.status === "RED").length;
 
-  const filteredStudents = STUDENTS_40.filter((s) => {
+  const filteredStudents = students.filter((s) => {
     const matchesFilter = filter === "ALL" ? true : s.status === filter;
     const matchesSearch =
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -911,18 +103,23 @@ export default function TeacherHeatmapPage() {
   });
 
   const handleAssignIntervention = (student: StudentData) => {
+    const rawStudent = rawStudents.find((s) => s.id === student.id);
+    const activeIntv = rawStudent?.interventions?.[0];
+    if (activeIntv) {
+      completeIntervention(student.id, activeIntv.id);
+    }
     toast({
       kind: "success",
-      title: `Intervention Assigned: ${student.name}`,
-      body: `Scheduled: ${student.intervention.action}`,
+      title: "Intervention Assigned: " + student.name,
+      body: "Scheduled: " + student.intervention.action,
     });
   };
 
   const handleQueuePeerPod = (student: StudentData) => {
     toast({
       kind: "info",
-      title: `Queued to Peer Pod`,
-      body: `Assigned partner: ${student.intervention.peerBuddy}`,
+      title: "Queued to Peer Pod",
+      body: "Assigned partner: " + student.intervention.peerBuddy,
     });
   };
 
@@ -941,7 +138,7 @@ export default function TeacherHeatmapPage() {
                 <Badge variant="brand">Cohort Live Grid</Badge>
               </div>
               <p className="text-xs text-slate-400 font-medium">
-                Grade 8 · Section A · 40 Students Live Mastery
+                Grade 8 · Section A · {students.length} Students Live Mastery
               </p>
             </div>
           </div>
@@ -963,12 +160,13 @@ export default function TeacherHeatmapPage() {
           <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
+              <div className="mb-3"><DemoBadge showReset /></div>
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-white/15 backdrop-blur border border-white/20 text-sky-200 mb-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 Real-Time Telemetry Matrix
               </span>
               <h2 className="text-2xl font-extrabold tracking-tight">
-                Classroom Heatmap (40 Students)
+                Classroom Heatmap ({students.length} Students)
               </h2>
               <p className="text-white/80 text-sm mt-1 max-w-xl">
                 Click any student tile to inspect their AI Learning DNA, pinpoint cognitive gaps, and deploy 1-click interventions before the class ends.
@@ -1005,7 +203,7 @@ export default function TeacherHeatmapPage() {
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              All (40)
+              All ({students.length})
             </button>
             <button
               onClick={() => setFilter("GREEN")}
@@ -1057,7 +255,7 @@ export default function TeacherHeatmapPage() {
           </div>
         </div>
 
-        {/* 40-Student Heatmap Grid */}
+        {/* 45-Student Heatmap Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
           {filteredStudents.map((st) => {
             const isSelected = selectedStudent?.id === st.id;
